@@ -1,0 +1,6 @@
+# Default ignored files
+*.iml
+modules.xml
+edge-matrix-core.iml
+vcs.xml
+workspace.xml
