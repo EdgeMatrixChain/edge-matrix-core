@@ -1,0 +1,18 @@
+# Default ignored files
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+.history
+
+# Builds
+build/
+bin/
+site/
+
+# golang
+.env
+bridge
+keys/
+*.key
