@@ -121,7 +121,7 @@ func (s *Server) setupIdentity() error {
 	identityService := identity.NewIdentityService(
 		s,
 		s.logger,
-		0,
+		s.config.NetworkID,
 		s.host.ID(),
 	)
 	// Register the identity service protocol

@@ -16,7 +16,7 @@ import (
 const PeerID = "peerID"
 
 var (
-	ErrInvalidChainID   = errors.New("invalid chain ID")
+	ErrInvalidNetworkID = errors.New("invalid network ID")
 	ErrNoAvailableSlots = errors.New("no available Slots")
 )
 
@@ -64,21 +64,21 @@ type IdentityService struct {
 	logger                 hclog.Logger     // The IdentityService logger
 	baseServer             networkingServer // The interface towards the base networking server
 
-	chainID int64   // The chain ID of the network
-	hostID  peer.ID // The base networking server's host peer ID
+	networkID int64   // The config ID of the network
+	hostID    peer.ID // The base networking server's host peer ID
 }
 
 // NewIdentityService returns a new instance of the IdentityService
 func NewIdentityService(
 	server networkingServer,
 	logger hclog.Logger,
-	chainID int64,
+	networkID int64,
 	hostID peer.ID,
 ) *IdentityService {
 	return &IdentityService{
 		logger:     logger.Named("identity"),
 		baseServer: server,
-		chainID:    chainID,
+		networkID:  networkID,
 		hostID:     hostID,
 	}
 }
@@ -178,9 +178,9 @@ func (i *IdentityService) handleConnected(peerID peer.ID, direction network.Dire
 		return err
 	}
 
-	// Validate that the peers are working on the same chain
-	if status.Chain != resp.Chain {
-		return ErrInvalidChainID
+	// Validate that the peers are working on the same config
+	if status.Network != resp.Network {
+		return ErrInvalidNetworkID
 	}
 
 	// If this is a NOT temporary connection, save it
@@ -210,7 +210,7 @@ func (i *IdentityService) constructStatus(peerID peer.ID) *proto.Status {
 		Metadata: map[string]string{
 			PeerID: i.hostID.String(),
 		},
-		Chain:         i.chainID,
+		Network:       i.networkID,
 		TemporaryDial: i.baseServer.IsTemporaryDial(peerID),
 	}
 }

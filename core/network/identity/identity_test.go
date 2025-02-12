@@ -59,7 +59,7 @@ func TestTemporaryDial(t *testing.T) {
 				opts ...grpc.CallOption,
 			) (*proto.Status, error) {
 				return &proto.Status{
-					Chain:         0,
+					Network:       0,
 					TemporaryDial: true, // make sure the dial is temporary
 				}, nil
 			})
@@ -80,7 +80,7 @@ func TestTemporaryDial(t *testing.T) {
 func TestHandshake_Errors(t *testing.T) {
 	peersArray := make([]peer.ID, 0)
 	requesterChainID := int64(1)
-	responderChainID := requesterChainID + 1 // different chain ID
+	responderChainID := requesterChainID + 1 // different config ID
 
 	// Create an instance of the identity service
 	identityService := newIdentityService(
@@ -101,23 +101,23 @@ func TestHandshake_Errors(t *testing.T) {
 				opts ...grpc.CallOption,
 			) (*proto.Status, error) {
 				return &proto.Status{
-					Chain:         responderChainID,
+					Network:       responderChainID,
 					TemporaryDial: false,
 				}, nil
 			})
 		},
 	)
 
-	// Set the requester chain ID
-	identityService.chainID = requesterChainID
+	// Set the requester config ID
+	identityService.networkID = requesterChainID
 
-	// Check that there was a chain ID mismatch during handshaking
+	// Check that there was a config ID mismatch during handshaking
 	connectErr := identityService.handleConnected("TestPeer", network.DirInbound)
 	if connectErr == nil {
 		t.Fatalf("no connection error occurred")
 	}
 
-	assert.ErrorIs(t, connectErr, ErrInvalidChainID)
+	assert.ErrorIs(t, connectErr, ErrInvalidNetworkID)
 
 	// Make sure no peers have been  added to the base networking server
 	assert.Len(t, peersArray, 0)

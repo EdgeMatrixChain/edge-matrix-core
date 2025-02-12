@@ -26,10 +26,6 @@ import (
 	"time"
 )
 
-const (
-	defaultBucketSize = 256
-)
-
 // PeerConnInfo holds the connection information about the peer
 type PeerConnInfo struct {
 	Info peer.AddrInfo
@@ -148,7 +144,7 @@ func (s *RelayServer) registerAliveService(aliveService *AliveService) {
 }
 
 // NewRelayServer returns a new instance of the relay server
-func NewRelayServer(logger hclog.Logger, secretsManager secrets.SecretsManager, relayListenAddr multiaddr.Multiaddr, config *emcNetwork.Config, RelayDiscovery bool) (*RelayServer, error) {
+func NewRelayServer(logger hclog.Logger, secretsManager secrets.SecretsManager, relayListenAddr multiaddr.Multiaddr, config *emcNetwork.Config, RelayDiscovery bool, relayNodes []string) (*RelayServer, error) {
 	logger = logger.Named("relay-server")
 
 	key, err := setupLibp2pKey(secretsManager)
@@ -191,8 +187,7 @@ func NewRelayServer(logger hclog.Logger, secretsManager secrets.SecretsManager, 
 	}
 
 	if RelayDiscovery {
-		relaynodes := config.Chain.Relaynodes
-		if setupErr := srv.setupRelaynodes(relaynodes); setupErr != nil {
+		if setupErr := srv.setupRelaynodes(relayNodes); setupErr != nil {
 			return nil, fmt.Errorf("unable to parse relaynode data, %w", setupErr)
 		}
 	}

@@ -724,7 +724,10 @@ func (s *RelayClient) keepAliveToBootnodes() {
 
 		// add a new found relay node
 		if discovery != "" {
-			s.addRelaynodes([]string{discovery})
+			err := s.addRelaynodes([]string{discovery})
+			if err != nil {
+				s.logger.Error("addRelaynodes", "err", err.Error())
+			}
 		}
 	}
 }
@@ -761,7 +764,7 @@ func (m *RelayClient) startApplicationEventProcess(subscrption application.Subsc
 }
 
 // NewRelayClient returns a new instance of the relay client
-func NewRelayClient(logger hclog.Logger, config *emcNetwork.Config, relayOn bool) (*RelayClient, error) {
+func NewRelayClient(logger hclog.Logger, config *emcNetwork.Config, relayOn bool, relayNodes []string) (*RelayClient, error) {
 	logger = logger.Named("relay-client")
 	key, err := setupLibp2pKey(config.SecretsManager)
 	if err != nil {
@@ -820,8 +823,7 @@ func NewRelayClient(logger hclog.Logger, config *emcNetwork.Config, relayOn bool
 
 	clt.logger.Info("LibP2P Relay client running", "addr", edgeNodeHost.Addrs()[0].String()+"/p2p/"+edgeNodeHost.ID().String())
 
-	relaynodes := config.Chain.Relaynodes
-	if setupErr := clt.setupRelaynodes(relaynodes); setupErr != nil {
+	if setupErr := clt.setupRelaynodes(relayNodes); setupErr != nil {
 		return nil, fmt.Errorf("unable to parse relaynode data, %w", setupErr)
 	}
 

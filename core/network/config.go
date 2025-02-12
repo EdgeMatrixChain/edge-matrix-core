@@ -9,6 +9,7 @@ import (
 
 // Config details the params for the base networking server
 type Config struct {
+	NetworkID        int64
 	NoDiscover       bool                   // flag indicating if the discovery mechanism should be turned on
 	Addr             *net.TCPAddr           // the base address
 	NatAddr          net.IP                 // the NAT address
@@ -22,6 +23,7 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
+		NetworkID: 0,
 		// The discovery service is turned on by default
 		NoDiscover: false,
 		// Addresses are bound to localhost by default

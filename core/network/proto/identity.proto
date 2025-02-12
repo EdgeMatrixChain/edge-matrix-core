@@ -13,7 +13,7 @@ message Status {
 
   repeated Key keys = 2;
 
-  int64 chain = 3;
+  int64 network = 3;
 
   string genesis = 4;
 
