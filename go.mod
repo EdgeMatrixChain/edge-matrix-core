@@ -1,4 +1,4 @@
-module github.com/emc-protocol
+module github.com/emc-protocol/edge-matrix-core
 
 go 1.19
 
