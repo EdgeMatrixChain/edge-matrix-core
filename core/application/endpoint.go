@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/emc-protocol/edge-matrix-core/core/application/proof"
 	appAgent "github.com/emc-protocol/edge-matrix-core/core/application/proof/agent"
 	"github.com/emc-protocol/edge-matrix-core/core/application/proof/helper"
 	"github.com/emc-protocol/edge-matrix-core/core/crypto"
@@ -20,7 +21,6 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 )
@@ -54,7 +54,7 @@ type Endpoint struct {
 	tag        string
 	listener   net.Listener
 	httpClient *rpc.FastHttpClient
-	//signer     Signer
+	signer     proof.Signer
 	privateKey *ecdsa.PrivateKey
 	address    types.Address
 	stream     *eventStream // Event subscriptions
@@ -67,6 +67,8 @@ type Endpoint struct {
 	latestBlockNum      uint64
 
 	isEdgeMode bool
+
+	httpHandler *EndpointHandler
 }
 
 // SubscribeEvents returns a application event subscription
@@ -89,12 +91,24 @@ func (e *Endpoint) Close() {
 
 // SetSigner sets the signer the endpint will use
 // to validate a edge call response's signature.
-//func (e *Endpoint) SetSigner(s Signer) {
-//	e.signer = s
-//}
+func (e *Endpoint) SetSigner(s proof.Signer) {
+	e.signer = s
+}
 
 func (e *Endpoint) GetEndpointApplication() *Application {
 	return e.application
+}
+
+func (e *Endpoint) GetHandlerList() []string {
+	keys := make([]string, 0, len(e.httpHandler.routes))
+	for k := range e.httpHandler.routes {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (e *Endpoint) AddHandler(url string, handler func(w http.ResponseWriter, r *http.Request)) {
+	e.httpHandler.AddHandler(url, handler)
 }
 
 func (e *Endpoint) doAppNodeBind() error {
@@ -115,7 +129,7 @@ func (e *Endpoint) getAppOrigin() (error, string) {
 	return nil, appOrigin
 }
 
-func (e *Endpoint) getAppIdl() (error, string) {
+func (e *Endpoint) GetAppIdl() (error, string) {
 	agent := appAgent.NewAppAgent(e.appUrl)
 	err, appOrigin := agent.GetAppOrigin()
 	if err != nil {
@@ -155,8 +169,8 @@ func NewApplicationEndpoint(
 		latestBlockHeadHash: "",
 		latestBlockNum:      0,
 		isEdgeMode:          isEdgeMode,
+		httpHandler:         &EndpointHandler{routes: make(map[string]func(w http.ResponseWriter, r *http.Request))},
 	}
-	rand.Seed(time.Now().Unix())
 	endpoint.randomNum = rand.Intn(1000)
 	endpoint.httpClient = rpc.NewDefaultHttpClient()
 	listener, err := gostream.Listen(srvHost, ProtoTagEcApp)
@@ -224,7 +238,29 @@ func NewApplicationEndpoint(
 	}
 
 	go func() {
-		http.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
+		endpoint.httpHandler.AddHandler("/health", func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			var health struct {
+				PeerID      string `json:"peerId"`
+				Uptime      uint64 `json:"uptime"`
+				StartupTime uint64 `json:"startupTime"`
+				Version     string `json:"version"`
+				Time        string `json:"time"`
+			}
+			health.PeerID = endpoint.application.PeerID.String()
+			health.Version = endpoint.application.Version
+			health.Uptime = uint64(time.Now().UnixMilli()) - endpoint.application.StartupTime
+			health.StartupTime = endpoint.application.StartupTime
+			health.Time = time.Now().String()
+			resp, err := json.Marshal(health)
+			if err != nil {
+				resp = []byte("err: " + err.Error())
+			}
+
+			w.Write(resp)
+		})
+
+		endpoint.httpHandler.AddHandler("/info", func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 			var infoObj struct {
 				Name        string `json:"name"`
@@ -259,41 +295,15 @@ func NewApplicationEndpoint(
 			infoObj.ModelHash = endpoint.application.ModelHash
 			infoObj.AveragePower = endpoint.application.AveragePower
 
-			info := make([]byte, 0)
 			info, err := json.Marshal(infoObj)
 			if err != nil {
 				info = []byte("endpoint err: " + err.Error())
 			}
 
-			writeResponse(w, info, endpoint)
+			WriteSignedResponse(w, info, endpoint)
 		})
 
-		http.HandleFunc("/alive", func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
-			resp := fmt.Sprintf("%s", time.Now().String())
-			w.Write([]byte(resp))
-		})
-
-		http.HandleFunc("/idl", func(w http.ResponseWriter, r *http.Request) {
-			defer r.Body.Close()
-			err, appIdl := endpoint.getAppIdl()
-			if err != nil {
-				// TODO Fetch idl json text through GET #{appUrl}/getAppIdl
-				endpoint.logger.Debug(fmt.Sprintf("/getAppIdl =>resp: %s", err.Error()))
-				idlData, err := os.ReadFile("idl.json")
-				if nil != err {
-					idlData = []byte("[]")
-				}
-				writeResponse(w, idlData, endpoint)
-			} else {
-				if len(appIdl) > 0 {
-					writeResponse(w, []byte(appIdl), endpoint)
-				} else {
-					writeResponse(w, []byte("[]"), endpoint)
-				}
-			}
-		})
-
+		http.Handle("/", endpoint.httpHandler)
 		server := &http.Server{}
 		server.Serve(listener)
 	}()
@@ -301,10 +311,23 @@ func NewApplicationEndpoint(
 	return endpoint, nil
 }
 
-func writeResponse(w http.ResponseWriter, data []byte, endpoint *Endpoint) {
-	resp := base64.StdEncoding.EncodeToString(data)
+func WriteSignedResponse(w http.ResponseWriter, info []byte, endpoint *Endpoint) {
+	resp := base64.StdEncoding.EncodeToString(info)
+	edgeResp := &proof.EdgeResponse{
+		RespString: resp,
+	}
+	endpoint.logger.Debug(fmt.Sprintf("/api =>resp size: %d", len(edgeResp.RespString)))
 
-	endpoint.logger.Debug(fmt.Sprintf("/api =>resp size: %d", len(resp)))
+	signedResp, err := endpoint.signer.SignEdgeResp(edgeResp, endpoint.privateKey)
+	if err != nil {
+		w.Write([]byte(err.Error()))
+	}
+	provider, err := endpoint.signer.Provider(signedResp)
+	if err != nil {
+		return
+	}
+	signedResp.From = provider
+	signedResp.Hash = endpoint.signer.Hash(edgeResp)
 
-	w.Write(data)
+	w.Write(signedResp.MarshalRLP())
 }
