@@ -10,11 +10,6 @@ import (
 	"math/big"
 )
 
-const (
-	appSyncerProto = "/appsyncer/0.1"
-	syncerName     = "appsyncer"
-)
-
 type Network interface {
 	// AddrInfo returns Network Info
 	AddrInfo() *peer.AddrInfo

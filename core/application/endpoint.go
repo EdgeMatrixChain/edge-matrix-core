@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emc-protocol/edge-matrix-core/core/application/proof"
-	appAgent "github.com/emc-protocol/edge-matrix-core/core/application/proof/agent"
 	"github.com/emc-protocol/edge-matrix-core/core/application/proof/helper"
 	"github.com/emc-protocol/edge-matrix-core/core/crypto"
 	"github.com/emc-protocol/edge-matrix-core/core/helper/rpc"
@@ -111,43 +110,9 @@ func (e *Endpoint) AddHandler(url string, handler func(w http.ResponseWriter, r 
 	e.httpHandler.AddHandler(url, handler)
 }
 
-func (e *Endpoint) doAppNodeBind() error {
-	agent := appAgent.NewAppAgent(e.appUrl)
-	err := agent.BindAppNode(e.h.ID().String())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (e *Endpoint) getAppOrigin() (error, string) {
-	agent := appAgent.NewAppAgent(e.appUrl)
-	err, appOrigin := agent.GetAppOrigin()
-	if err != nil {
-		return err, ""
-	}
-	return nil, appOrigin
-}
-
-func (e *Endpoint) GetAppIdl() (error, string) {
-	agent := appAgent.NewAppAgent(e.appUrl)
-	err, appOrigin := agent.GetAppOrigin()
-	if err != nil {
-		return err, ""
-	}
-	return nil, appOrigin
-}
-
-func (e *Endpoint) validAppNode() (error, bool) {
-	agent := appAgent.NewAppAgent(e.appUrl)
-	err, nodeId := agent.GetAppNode()
-	if err != nil {
-		return err, false
-	}
-	if e.h.ID().String() == nodeId {
-		return nil, true
-	}
-	return nil, false
+func (e *Endpoint) SetAppOrigin(appOrigin string) {
+	e.appOrigin = appOrigin
+	e.application.AppOrigin = appOrigin
 }
 
 func NewApplicationEndpoint(
@@ -213,18 +178,6 @@ func NewApplicationEndpoint(
 			for {
 				<-ticker.C
 				event := &Event{}
-				// bind app node
-				err := endpoint.doAppNodeBind()
-				if err != nil {
-					endpoint.logger.Error("doAppNodeBind", "err", err.Error())
-				}
-
-				err, appOrigin := endpoint.getAppOrigin()
-				if err != nil {
-					endpoint.logger.Error("getAppOrigin", "err", err.Error())
-				}
-
-				endpoint.application.AppOrigin = appOrigin
 				endpoint.application.Uptime = uint64(time.Now().UnixMilli()) - endpoint.application.StartupTime
 				endpoint.application.MemInfo = helper.GetMemInfo()
 				endpoint.application.GpuInfo = helper.GetGpuInfo()
