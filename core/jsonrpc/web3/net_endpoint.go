@@ -1,4 +1,4 @@
-package jsonrpc
+package web3
 
 import (
 	"github.com/libp2p/go-libp2p/core/host"

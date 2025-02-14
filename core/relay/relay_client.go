@@ -719,6 +719,7 @@ func (s *RelayClient) keepAliveToBootnodes() {
 				"err", err.Error(),
 			)
 			bootnode = nil
+			time.Sleep(1 * time.Second)
 		}
 		s.logger.Debug("keepAliveToBootnodes result", "success", success, "discovery", discovery)
 

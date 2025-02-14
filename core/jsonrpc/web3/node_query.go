@@ -1,4 +1,4 @@
-package jsonrpc
+package web3
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ type NodeQuery struct {
 	version string
 }
 
-func decodeNodeQueryFromInterface(i interface{}) (*NodeQuery, error) {
+func DecodeNodeQueryFromInterface(i interface{}) (*NodeQuery, error) {
 	// once the node filter is decoded as map[string]interface we cannot use unmarshal json
 	raw, err := json.Marshal(i)
 	if err != nil {

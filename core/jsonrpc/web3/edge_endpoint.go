@@ -1,4 +1,4 @@
-package jsonrpc
+package web3
 
 import (
 	"fmt"

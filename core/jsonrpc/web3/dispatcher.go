@@ -1,10 +1,11 @@
-package jsonrpc
+package web3
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/emc-protocol/edge-matrix-core/core/jsonrpc"
 	"github.com/libp2p/go-libp2p/core/host"
 	"math"
 	"reflect"
@@ -98,23 +99,23 @@ func (d *Dispatcher) registerEndpoints(store JSONRPCStore) {
 	//d.registerService("telepool", d.endpoints.TelePool)
 }
 
-func (d *Dispatcher) getFnHandler(req Request) (*serviceData, *funcData, Error) {
+func (d *Dispatcher) getFnHandler(req Request) (*serviceData, *funcData, jsonrpc.Error) {
 	callName := strings.SplitN(req.Method, "_", 2)
 	if len(callName) != 2 {
-		return nil, nil, NewMethodNotFoundError(req.Method)
+		return nil, nil, jsonrpc.NewMethodNotFoundError(req.Method)
 	}
 
 	serviceName, funcName := callName[0], callName[1]
 
 	service, ok := d.serviceMap[serviceName]
 	if !ok {
-		return nil, nil, NewMethodNotFoundError(req.Method)
+		return nil, nil, jsonrpc.NewMethodNotFoundError(req.Method)
 	}
 
 	fd, ok := service.funcMap[funcName]
 
 	if !ok {
-		return nil, nil, NewMethodNotFoundError(req.Method)
+		return nil, nil, jsonrpc.NewMethodNotFoundError(req.Method)
 	}
 
 	return service, fd, nil
@@ -128,7 +129,7 @@ type wsConn interface {
 
 // as per https://www.jsonrpc.org/specification, the `id` in JSON-RPC 2.0
 // can only be a string or a non-decimal integer
-func formatFilterResponse(id interface{}, resp string) (string, Error) {
+func formatFilterResponse(id interface{}, resp string) (string, jsonrpc.Error) {
 	switch t := id.(type) {
 	case string:
 		return fmt.Sprintf(`{"jsonrpc":"2.0","id":"%s","result":"%s"}`, t, resp), nil
@@ -136,42 +137,42 @@ func formatFilterResponse(id interface{}, resp string) (string, Error) {
 		if t == math.Trunc(t) {
 			return fmt.Sprintf(`{"jsonrpc":"2.0","id":%d,"result":"%s"}`, int(t), resp), nil
 		} else {
-			return "", NewInvalidRequestError("Invalid json request")
+			return "", jsonrpc.NewInvalidRequestError("Invalid json request")
 		}
 	case nil:
 		return fmt.Sprintf(`{"jsonrpc":"2.0","id":null,"result":"%s"}`, resp), nil
 	default:
-		return "", NewInvalidRequestError("Invalid json request")
+		return "", jsonrpc.NewInvalidRequestError("Invalid json request")
 	}
 }
 
-func (d *Dispatcher) handleEdgeSubscribe(req Request, conn wsConn) (string, Error) {
+func (d *Dispatcher) handleEdgeSubscribe(req Request, conn wsConn) (string, jsonrpc.Error) {
 	var params []interface{}
 	if err := json.Unmarshal(req.Params, &params); err != nil {
-		return "", NewInvalidRequestError("Invalid json request")
+		return "", jsonrpc.NewInvalidRequestError("Invalid json request")
 	}
 
 	if len(params) == 0 {
-		return "", NewInvalidParamsError("Invalid params")
+		return "", jsonrpc.NewInvalidParamsError("Invalid params")
 	}
 
 	subscribeMethod, ok := params[0].(string)
 	if !ok {
-		return "", NewSubscriptionNotFoundError(subscribeMethod)
+		return "", jsonrpc.NewSubscriptionNotFoundError(subscribeMethod)
 	}
 
 	var filterID string
 	if subscribeMethod == "node" {
 		if len(params) < 2 {
-			return "", NewInvalidRequestError("params[1] is not exist")
+			return "", jsonrpc.NewInvalidRequestError("params[1] is not exist")
 		}
-		nodeQuery, err := decodeNodeQueryFromInterface(params[1])
+		nodeQuery, err := DecodeNodeQueryFromInterface(params[1])
 		if err != nil {
-			return "", NewInternalError(err.Error())
+			return "", jsonrpc.NewInternalError(err.Error())
 		}
 		filterID = d.nodeFilterManager.NewNodeFilter(nodeQuery, conn)
 	} else {
-		return "", NewSubscriptionNotFoundError(subscribeMethod)
+		return "", jsonrpc.NewSubscriptionNotFoundError(subscribeMethod)
 	}
 
 	return filterID, nil
@@ -184,7 +185,7 @@ func (d *Dispatcher) RemoveFilterByWs(conn wsConn) {
 func (d *Dispatcher) HandleWs(reqBody []byte, conn wsConn) ([]byte, error) {
 	var req Request
 	if err := json.Unmarshal(reqBody, &req); err != nil {
-		return NewRPCResponse(req.ID, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
+		return NewRPCResponse(req.ID, "2.0", nil, jsonrpc.NewInvalidRequestError("Invalid json request")).Bytes()
 	}
 
 	// if the request method is edge_subscribe we need to create a
@@ -226,17 +227,17 @@ func (d *Dispatcher) HandleWs(reqBody []byte, conn wsConn) ([]byte, error) {
 func (d *Dispatcher) Handle(reqBody []byte) ([]byte, error) {
 	x := bytes.TrimLeft(reqBody, " \t\r\n")
 	if len(x) == 0 {
-		return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
+		return NewRPCResponse(nil, "2.0", nil, jsonrpc.NewInvalidRequestError("Invalid json request")).Bytes()
 	}
 
 	if x[0] == '{' {
 		var req Request
 		if err := json.Unmarshal(reqBody, &req); err != nil {
-			return NewRPCResponse(nil, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
+			return NewRPCResponse(nil, "2.0", nil, jsonrpc.NewInvalidRequestError("Invalid json request")).Bytes()
 		}
 
 		if req.Method == "" {
-			return NewRPCResponse(req.ID, "2.0", nil, NewInvalidRequestError("Invalid json request")).Bytes()
+			return NewRPCResponse(req.ID, "2.0", nil, jsonrpc.NewInvalidRequestError("Invalid json request")).Bytes()
 		}
 
 		resp, err := d.handleReq(req)
@@ -251,7 +252,7 @@ func (d *Dispatcher) Handle(reqBody []byte) ([]byte, error) {
 			nil,
 			"2.0",
 			nil,
-			NewInvalidRequestError("Invalid json request"),
+			jsonrpc.NewInvalidRequestError("Invalid json request"),
 		).Bytes()
 	}
 
@@ -261,7 +262,7 @@ func (d *Dispatcher) Handle(reqBody []byte) ([]byte, error) {
 			nil,
 			"2.0",
 			nil,
-			NewInvalidRequestError("Batch request length too long"),
+			jsonrpc.NewInvalidRequestError("Batch request length too long"),
 		).Bytes()
 	}
 
@@ -282,13 +283,13 @@ func (d *Dispatcher) Handle(reqBody []byte) ([]byte, error) {
 
 	respBytes, err := json.Marshal(responses)
 	if err != nil {
-		return NewRPCResponse(nil, "2.0", nil, NewInternalError("Internal error")).Bytes()
+		return NewRPCResponse(nil, "2.0", nil, jsonrpc.NewInternalError("Internal error")).Bytes()
 	}
 
 	return respBytes, nil
 }
 
-func (d *Dispatcher) handleReq(req Request) ([]byte, Error) {
+func (d *Dispatcher) handleReq(req Request) ([]byte, jsonrpc.Error) {
 	d.logger.Debug("request", "method", req.Method, "id", req.ID)
 
 	service, fd, ferr := d.getFnHandler(req)
@@ -309,7 +310,7 @@ func (d *Dispatcher) handleReq(req Request) ([]byte, Error) {
 
 	if fd.numParams() > 0 {
 		if err := json.Unmarshal(req.Params, &inputs); err != nil {
-			return nil, NewInvalidParamsError("Invalid Params")
+			return nil, jsonrpc.NewInvalidParamsError("Invalid Params")
 		}
 	}
 
@@ -317,7 +318,7 @@ func (d *Dispatcher) handleReq(req Request) ([]byte, Error) {
 	if err := getError(output[1]); err != nil {
 		d.logInternalError(req.Method, err)
 
-		return nil, NewInvalidRequestError(err.Error())
+		return nil, jsonrpc.NewInvalidRequestError(err.Error())
 	}
 
 	var (
@@ -330,7 +331,7 @@ func (d *Dispatcher) handleReq(req Request) ([]byte, Error) {
 		if err != nil {
 			d.logInternalError(req.Method, err)
 
-			return nil, NewInternalError("Internal error")
+			return nil, jsonrpc.NewInternalError("Internal error")
 		}
 	}
 
