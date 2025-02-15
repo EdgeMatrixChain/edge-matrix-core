@@ -74,7 +74,7 @@ func (l *LocalSecretsManager) Setup() error {
 	l.secretPathMapLock.Lock()
 	defer l.secretPathMapLock.Unlock()
 
-	subDirectories := []string{secrets.ConsensusFolderLocal, secrets.NetworkFolderLocal, secrets.ICPFolderLocal}
+	subDirectories := []string{secrets.ConsensusFolderLocal, secrets.NetworkFolderLocal}
 
 	// Set up the local directories
 	if err := common.SetupDataDir(l.path, subDirectories, 0770); err != nil {
@@ -94,14 +94,7 @@ func (l *LocalSecretsManager) Setup() error {
 		secrets.ConsensusFolderLocal,
 		secrets.ValidatorBLSKeyLocal,
 	)
-
-	// baseDir/icp/identity.key
-	l.secretPathMap[secrets.ICPIdentityKey] = filepath.Join(
-		l.path,
-		secrets.ICPFolderLocal,
-		secrets.ICPIdentityKeyLocal,
-	)
-
+	
 	// baseDir/consensus/validator.sig
 	l.secretPathMap[secrets.ValidatorBLSSignature] = filepath.Join(
 		l.path,

@@ -81,15 +81,6 @@ func isEncrypted(secretsManager secrets.SecretsManager, name string) (bool, erro
 	return false, nil
 }
 
-func validateByPass(secretsManager secrets.SecretsManager, pass string) (bool, error) {
-	// TODO validate by pass
-	// generate random data
-	// encrypt data by secretsManager
-	// decrypt data by pass
-	// validate 2 data
-	return false, nil
-}
-
 func SetEncryptedKey(secretsManager secrets.SecretsManager, name string, secretsPass string, privKey string) error {
 	// encrypt key
 	encryptedKey, err := crypto.CFBEncrypt(privKey, secretsPass)
@@ -160,50 +151,6 @@ func EncryptECDSAValidatorKey(secretsManager secrets.SecretsManager, secretsPass
 		privKey = string(validatorKeyEncoded)
 	}
 	err2 := SetEncryptedKey(secretsManager, secrets.ValidatorKey, secretsPass, privKey)
-	if err2 != nil {
-		return err2
-	}
-	return nil
-}
-
-func InitICPIdentityKey(secretsManager secrets.SecretsManager) ([]byte, error) {
-	if secretsManager.HasSecret(secrets.ICPIdentityKey) {
-		return nil, fmt.Errorf(`secrets "%s" has been already initialized`, secrets.ICPIdentityKey)
-	}
-	// generate ed25519 key for ICP identity
-	ed25519PubKey, ed25519PrivKey, err := crypto.GenerateAndEncodeICPIdentitySecretKey()
-	if err != nil {
-		return nil, err
-	}
-
-	// Write the ICP identity private key to the secrets manager storage
-	if setErr := secretsManager.SetSecret(
-		secrets.ICPIdentityKey,
-		ed25519PrivKey,
-	); setErr != nil {
-		return nil, setErr
-	}
-
-	return ed25519PubKey, nil
-}
-
-func EncryptICPIdentityKey(secretsManager secrets.SecretsManager, secretsPass string) error {
-	privKey := ""
-	if secretsManager.HasSecret(secrets.ICPIdentityKey) {
-		icPrivKey, err := secretsManager.GetSecret(secrets.ICPIdentityKey)
-		if err != nil {
-			return err
-		}
-		privKey = string(icPrivKey)
-	} else {
-		// generate ed25519 key for ICP identity
-		_, ed25519PrivKey, err := crypto.GenerateAndEncodeICPIdentitySecretKey()
-		if err != nil {
-			return err
-		}
-		privKey = string(ed25519PrivKey)
-	}
-	err2 := SetEncryptedKey(secretsManager, secrets.ICPIdentityKey, secretsPass, privKey)
 	if err2 != nil {
 		return err2
 	}

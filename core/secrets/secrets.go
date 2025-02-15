@@ -31,10 +31,7 @@ const (
 
 	// ValidatorBLSKey is the bls secret key of the validator node
 	ValidatorBLSKey = "validator-bls-key"
-
-	// ICPIdentityKey is the icp identity key of the validator node
-	ICPIdentityKey = "icp-identity-key"
-
+	
 	// SecureFlag is the key preffix of the key
 	SecureFlag = "secure-"
 
@@ -62,7 +59,6 @@ const (
 const (
 	ConsensusFolderLocal = "consensus"
 	NetworkFolderLocal   = "libp2p"
-	ICPFolderLocal       = "icp"
 )
 
 var (
@@ -117,12 +113,12 @@ type SecretsManagerParams struct {
 
 // SecretsManagerFactory is the factory method for secrets managers
 type SecretsManagerFactory func(
-	// config contains the necessary configuration saved to / read from json.
-	// It is used to configure the SecretsManager with information saved in advance
+// config contains the necessary configuration saved to / read from json.
+// It is used to configure the SecretsManager with information saved in advance
 	config *SecretsManagerConfig,
 
-	// params contains the runtime configuration parameters, such as the logger used,
-	// as well as any additional data the secrets manager might need (SecretsManagerParams.Extra field)
+// params contains the runtime configuration parameters, such as the logger used,
+// as well as any additional data the secrets manager might need (SecretsManagerParams.Extra field)
 	params *SecretsManagerParams,
 ) (SecretsManager, error)
 
