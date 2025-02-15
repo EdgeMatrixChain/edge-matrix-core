@@ -96,6 +96,7 @@ func (j *TransparentProxy) setupHTTP() error {
 	proxyHandler := http.HandlerFunc(j.handle)
 	mux.Handle("/", middlewareFactory(j.config)(proxyHandler))
 
+	// TODO implement websocket handler
 	//mux.HandleFunc("/edge_ws", j.handleWs)
 
 	srv := http.Server{
@@ -179,7 +180,6 @@ func ParseEdgePath(req *http.Request) (*EdgePath, error) {
 	port := parts[3]
 	interfaceURL := strings.Join(parts[4:], "/")
 
-	// 解码URL编码的部分
 	decodedNodeID, err := url.QueryUnescape(nodeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode nodeID: %w", err)
@@ -220,27 +220,6 @@ func (j *TransparentProxy) handlePostRequest(w http.ResponseWriter, req *http.Re
 	}
 	// log request
 	j.logger.Debug("handle", "request", string(body))
-
-	//var randReader io.Reader
-	//randReader = rand.Reader
-	//prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, randReader)
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	// TODO replace by j.config.Store.GetRelayHost()
-	//listen, _ := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/10001")
-	//clientHost, err := libp2p.New(
-	//	libp2p.ListenAddrs(listen),
-	//	libp2p.Security(noise.ID, noise.New),
-	//	libp2p.Identity(prvKey),
-	//	//libp2p.EnableRelay(),
-	//	//libp2p.EnableAutoRelayWithStaticRelays([]peer.AddrInfo{*relayinfo}, autorelay.WithNumRelays(1)),
-	//)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//defer clientHost.Close()
 
 	clientHost := j.config.Store.GetRelayHost()
 	// query node in PeerStore

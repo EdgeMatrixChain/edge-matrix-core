@@ -128,13 +128,6 @@ func InitECDSAValidatorKey(secretsManager secrets.SecretsManager) (types.Address
 }
 
 func EncryptECDSAValidatorKey(secretsManager secrets.SecretsManager, secretsPass string) error {
-	//encryptFlag, err := isEncrypted(secretsManager, secrets.ValidatorKey)
-	//if err != nil {
-	//	return err
-	//}
-	//if encryptFlag {
-	//	// TODO need update confirm and show tips for retype old pass
-	//}
 	privKey := ""
 	if secretsManager.HasSecret(secrets.ValidatorKey) {
 		validatorKey, err := secretsManager.GetSecret(secrets.ValidatorKey)
