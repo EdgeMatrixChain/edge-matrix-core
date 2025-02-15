@@ -10,7 +10,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -54,6 +53,7 @@ type TransparentProxy struct {
 type TransparentProxyStore interface {
 	GetRelayHost() host.Host
 	GetNetworkHost() host.Host
+	GetAppPeer(id string) *AppPeer
 }
 
 type Config struct {
@@ -241,16 +241,34 @@ func (j *TransparentProxy) handlePostRequest(w http.ResponseWriter, req *http.Re
 	//	log.Fatal(err)
 	//}
 	//defer clientHost.Close()
-	clientHost := j.config.Store.GetRelayHost()
 
-	// TODO query pathInfo.NodeID in PeerStore
-	// TODO query relayer's peerID by pathInfo.NodeID
-	targetRelayInfo, err := peer.AddrInfoFromString(fmt.Sprintf("%s/p2p/%s/p2p-circuit/p2p/%s", j.config.Store.GetRelayHost().Addrs()[0].String(), j.config.Store.GetRelayHost().ID().String(), pathInfo.NodeID))
-	if err != nil {
-		log.Fatal(err)
+	clientHost := j.config.Store.GetRelayHost()
+	// query node in PeerStore
+	appPeer := j.config.Store.GetAppPeer(pathInfo.NodeID)
+	if appPeer == nil {
+		http.Error(w, "Failed to find node", http.StatusInternalServerError)
 		return
 	}
-	clientHost.Peerstore().AddAddrs(targetRelayInfo.ID, targetRelayInfo.Addrs, peerstore.PermanentAddrTTL)
+
+	//targetRelayInfo, err := peer.AddrInfoFromString(fmt.Sprintf("%s/p2p/%s/p2p-circuit/p2p/%s", j.config.Store.GetRelayHost().Addrs()[0].String(), j.config.Store.GetRelayHost().ID().String(), pathInfo.NodeID))
+	if appPeer.Relay != "" {
+		targetRelayInfo, err := peer.AddrInfoFromString(fmt.Sprintf("%s/p2p-circuit/p2p/%s", appPeer.Relay, pathInfo.NodeID))
+		if err != nil {
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+		clientHost.Peerstore().AddAddrs(targetRelayInfo.ID, targetRelayInfo.Addrs, peerstore.RecentlyConnectedAddrTTL)
+	} else if appPeer.Addr != "" {
+		addrInfo, err := peer.AddrInfoFromString(fmt.Sprintf("%s/p2p/%s", appPeer.Addr, pathInfo.NodeID))
+		if err != nil {
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+		clientHost.Peerstore().AddAddrs(addrInfo.ID, addrInfo.Addrs, peerstore.RecentlyConnectedAddrTTL)
+	} else {
+		http.Error(w, "Failed to find addr of node", http.StatusInternalServerError)
+		return
+	}
 
 	tr := &http.Transport{}
 	tr.RegisterProtocol("libp2p", p2phttp.NewTransport(clientHost, p2phttp.ProtocolOption(ProtoTagEcApp)))
@@ -262,6 +280,7 @@ func (j *TransparentProxy) handlePostRequest(w http.ResponseWriter, req *http.Re
 	}
 	data, err := json.Marshal(transparentForwardData)
 	if err != nil {
+		http.Error(w, "Failed to marshal TransparentForward", http.StatusInternalServerError)
 		return
 	}
 

@@ -90,9 +90,11 @@ func (s *syncer) Start(topicSubFlag bool) error {
 
 	s.syncAppPeerService.Start()
 
+	// subscribes peer status change event and updates peer map
 	go s.startPeerStatusUpdateProcess()
-	//go s.startPeerConnectionEventProcess()
+
 	go func() {
+		// broadcast self status
 		s.doPublishAppStatus()
 		ticker := time.NewTicker(DefaultAppStatusPublishDuration)
 		for {
