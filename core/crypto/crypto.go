@@ -504,14 +504,6 @@ func ReadConsensusKey(manager secrets.SecretsManager) (*ecdsa.PrivateKey, error)
 	return BytesToECDSAPrivateKey(validatorKey)
 }
 
-func ReadICPIdentityKey(manager secrets.SecretsManager) (ed25519.PrivateKey, error) {
-	bytes, err := manager.GetSecret(secrets.ICPIdentityKey)
-	if err != nil {
-		return nil, err
-	}
-	return bytes, nil
-}
-
 // Encode to Base64 string
 func Base64Encode(b []byte) string {
 	return base64.StdEncoding.EncodeToString(b)

@@ -1,6 +1,8 @@
 package application
 
 import (
+	"bufio"
+	"bytes"
 	"crypto/ecdsa"
 	"encoding/base64"
 	"encoding/json"
@@ -17,6 +19,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
+	"io"
 	"math/rand"
 	"net"
 	"net/http"
@@ -25,12 +28,8 @@ import (
 )
 
 const (
-	// proto tag for p2phttp
-	ProtoTagEcApp = "/em-app"
-)
-
-const (
-	txSlotSize = 32 * 1024 // 32kB
+	ProtoTagEcApp        = "/em-app"
+	TransparentRewardUrl = "/transparent_forward"
 )
 
 const (
@@ -48,6 +47,7 @@ type Endpoint struct {
 
 	name       string
 	appUrl     string
+	appPort    uint64
 	appOrigin  string
 	h          host.Host
 	tag        string
@@ -71,8 +71,8 @@ type Endpoint struct {
 }
 
 // SubscribeEvents returns a application event subscription
-func (b *Endpoint) SubscribeEvents() Subscription {
-	return b.stream.subscribe()
+func (e *Endpoint) SubscribeEvents() Subscription {
+	return e.stream.subscribe()
 }
 
 func (e *Endpoint) getID() peer.ID {
@@ -88,8 +88,8 @@ func (e *Endpoint) Close() {
 	e.h.Close()
 }
 
-// SetSigner sets the signer the endpint will use
-// to validate a edge call response's signature.
+// SetSigner sets the signer the endpoint will use
+// to validate an edge call response's signature.
 func (e *Endpoint) SetSigner(s proof.Signer) {
 	e.signer = s
 }
@@ -121,11 +121,13 @@ func NewApplicationEndpoint(
 	srvHost host.Host,
 	name string,
 	appUrl string,
+	appPort uint64,
 	isEdgeMode bool) (*Endpoint, error) {
 	endpoint := &Endpoint{
 		logger:              logger.Named("app_endpoint"),
 		name:                name,
 		appUrl:              appUrl,
+		appPort:             appPort,
 		appOrigin:           "",
 		h:                   srvHost,
 		tag:                 ProtoTagEcApp,
@@ -191,6 +193,73 @@ func NewApplicationEndpoint(
 	}
 
 	go func() {
+		endpoint.httpHandler.AddHandler(TransparentRewardUrl, func(w http.ResponseWriter, r *http.Request) {
+			defer r.Body.Close()
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
+
+			var transForward TransparentForward
+			if err := json.Unmarshal(body, &transForward); err != nil {
+				_, _ = w.Write([]byte(err.Error()))
+				return
+			}
+
+			client := &http.Client{}
+			targetURL := fmt.Sprintf("%s:%d/%s", endpoint.appUrl, transForward.EdgePath.Port, transForward.EdgePath.InterfaceURL)
+			endpoint.logger.Debug(TransparentRewardUrl, "targetURL", targetURL)
+
+			req, err := http.NewRequest(r.Method, targetURL, bytes.NewReader([]byte(transForward.Payload)))
+			if err != nil {
+				http.Error(w, "Failed to create request", http.StatusInternalServerError)
+				return
+			}
+
+			for key, values := range r.Header {
+				for _, value := range values {
+					req.Header.Add(key, value)
+				}
+			}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				http.Error(w, "Failed to connect to target server", http.StatusInternalServerError)
+				return
+			}
+			defer resp.Body.Close()
+
+			for key, value := range resp.Header {
+				w.Header().Set(key, value[0])
+			}
+			w.WriteHeader(resp.StatusCode)
+			if resp.Header.Get("Content-Type") == "text/event-stream" {
+				reader := bufio.NewReader(resp.Body)
+				for {
+					line, err := reader.ReadBytes('\n')
+					if err != nil {
+						if err == io.EOF {
+							endpoint.logger.Warn(TransparentRewardUrl, "err", "SSE stream closed by server")
+							return
+						}
+						endpoint.logger.Warn(TransparentRewardUrl, "err", fmt.Sprintf("Error reading SSE stream: %v\n", err))
+						return
+					}
+
+					_, err = w.Write(line)
+					if err != nil {
+						endpoint.logger.Warn(TransparentRewardUrl, "err", fmt.Sprintf("Error writing to client: %v\n", err))
+						return
+					}
+
+					w.(http.Flusher).Flush()
+				}
+			} else {
+				io.Copy(w, resp.Body)
+			}
+		})
+
 		endpoint.httpHandler.AddHandler("/health", func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 			var health struct {
@@ -222,7 +291,7 @@ func NewApplicationEndpoint(
 				StartupTime uint64 `json:"startupTime"`
 				Version     string `json:"version"`
 				Tag         string `json:"tag"`
-				// ai model hash string
+				// AI model hash string
 				ModelHash string `json:"model_hash"`
 				// mac addr
 				Mac string `json:"mac"`

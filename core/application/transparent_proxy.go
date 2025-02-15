@@ -3,22 +3,18 @@ package application
 import (
 	"bufio"
 	"bytes"
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/libp2p/go-libp2p"
 	p2phttp "github.com/libp2p/go-libp2p-http"
-	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
-	"github.com/libp2p/go-libp2p/p2p/security/noise"
-	ma "github.com/multiformats/go-multiaddr"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -161,9 +157,14 @@ func (j *TransparentProxy) handle(w http.ResponseWriter, req *http.Request) {
 }
 
 type EdgePath struct {
-	NodeID       string
-	Port         string
-	InterfaceURL string
+	NodeID       string `json:"node_id"`
+	Port         int    `json:"port"`
+	InterfaceURL string `json:"interface_url"`
+}
+
+type TransparentForward struct {
+	EdgePath EdgePath `json:"edge_path"`
+	Payload  string   `json:"payload"`
 }
 
 func ParseEdgePath(req *http.Request) (*EdgePath, error) {
@@ -184,7 +185,7 @@ func ParseEdgePath(req *http.Request) (*EdgePath, error) {
 		return nil, fmt.Errorf("failed to decode nodeID: %w", err)
 	}
 
-	decodedPort, err := url.QueryUnescape(port)
+	decodedPort, err := strconv.Atoi(port)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode port: %w", err)
 	}
@@ -209,6 +210,8 @@ func (j *TransparentProxy) handlePostRequest(w http.ResponseWriter, req *http.Re
 	}
 	j.logger.Info("handle", "NodeID", pathInfo.NodeID, "Port", pathInfo.Port, "InterfaceURL", pathInfo.InterfaceURL)
 
+	// TODO verify NodeID by whitelist
+
 	defer req.Body.Close()
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -218,26 +221,29 @@ func (j *TransparentProxy) handlePostRequest(w http.ResponseWriter, req *http.Re
 	// log request
 	j.logger.Debug("handle", "request", string(body))
 
-	var randReader io.Reader
-	randReader = rand.Reader
-	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, randReader)
-	if err != nil {
-		panic(err)
-	}
+	//var randReader io.Reader
+	//randReader = rand.Reader
+	//prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, randReader)
+	//if err != nil {
+	//	panic(err)
+	//}
 
-	listen, _ := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/10001")
-	clientHost, err := libp2p.New(
-		libp2p.ListenAddrs(listen),
-		libp2p.Security(noise.ID, noise.New),
-		libp2p.Identity(prvKey),
-		//libp2p.EnableRelay(),
-		//libp2p.EnableAutoRelayWithStaticRelays([]peer.AddrInfo{*relayinfo}, autorelay.WithNumRelays(1)),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer clientHost.Close()
+	// TODO replace by j.config.Store.GetRelayHost()
+	//listen, _ := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/10001")
+	//clientHost, err := libp2p.New(
+	//	libp2p.ListenAddrs(listen),
+	//	libp2p.Security(noise.ID, noise.New),
+	//	libp2p.Identity(prvKey),
+	//	//libp2p.EnableRelay(),
+	//	//libp2p.EnableAutoRelayWithStaticRelays([]peer.AddrInfo{*relayinfo}, autorelay.WithNumRelays(1)),
+	//)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer clientHost.Close()
+	clientHost := j.config.Store.GetRelayHost()
 
+	// TODO query pathInfo.NodeID in PeerStore
 	// TODO query relayer's peerID by pathInfo.NodeID
 	targetRelayInfo, err := peer.AddrInfoFromString(fmt.Sprintf("%s/p2p/%s/p2p-circuit/p2p/%s", j.config.Store.GetRelayHost().Addrs()[0].String(), j.config.Store.GetRelayHost().ID().String(), pathInfo.NodeID))
 	if err != nil {
@@ -247,11 +253,33 @@ func (j *TransparentProxy) handlePostRequest(w http.ResponseWriter, req *http.Re
 	clientHost.Peerstore().AddAddrs(targetRelayInfo.ID, targetRelayInfo.Addrs, peerstore.PermanentAddrTTL)
 
 	tr := &http.Transport{}
-	tr.RegisterProtocol("libp2p", p2phttp.NewTransport(clientHost, p2phttp.ProtocolOption("/em-app")))
+	tr.RegisterProtocol("libp2p", p2phttp.NewTransport(clientHost, p2phttp.ProtocolOption(ProtoTagEcApp)))
 	client := &http.Client{Transport: tr}
 
-	ssePostData := bytes.NewBufferString(string(body))
-	resp, err := client.Post(fmt.Sprintf("libp2p://%s/health", pathInfo.NodeID), "application/json", ssePostData)
+	transparentForwardData := &TransparentForward{
+		EdgePath: *pathInfo,
+		Payload:  string(body),
+	}
+	data, err := json.Marshal(transparentForwardData)
+	if err != nil {
+		return
+	}
+
+	targetURL := fmt.Sprintf("libp2p://%s%s", pathInfo.NodeID, TransparentRewardUrl)
+	request, err := http.NewRequest(req.Method, targetURL, bytes.NewBufferString(string(data)))
+	if err != nil {
+		http.Error(w, "Failed to create p2p request", http.StatusInternalServerError)
+		return
+	}
+	// forward headers
+	for key, values := range req.Header {
+		for _, value := range values {
+			request.Header.Add(key, value)
+		}
+	}
+
+	// do request
+	resp, err := client.Do(request)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -268,18 +296,16 @@ func (j *TransparentProxy) handlePostRequest(w http.ResponseWriter, req *http.Re
 			line, err := reader.ReadBytes('\n')
 			if err != nil {
 				if err == io.EOF {
-					log.Println("SSE stream closed by server")
+					j.logger.Debug("handlePostRequest", "msg", "SSE stream closed by server")
 					return
 				}
-				log.Printf("Error reading SSE stream: %v\n", err)
+				j.logger.Warn("handlePostRequest", "err", fmt.Sprintf("Error reading SSE stream: %v\n", err))
 				return
 			}
 
-			log.Println(string(line))
-
 			_, err = w.Write(line)
 			if err != nil {
-				log.Printf("Error writing to client: %v\n", err)
+				j.logger.Warn("handlePostRequest", "err", fmt.Sprintf("Error writing to client: %v\n", err))
 				return
 			}
 
@@ -288,16 +314,6 @@ func (j *TransparentProxy) handlePostRequest(w http.ResponseWriter, req *http.Re
 	} else {
 		io.Copy(w, resp.Body)
 	}
-
-	//resp, err := j.dispatcher.Handle(data)
-	//
-	//if err != nil {
-	//	_, _ = w.Write([]byte(err.Error()))
-	//} else {
-	//	_, _ = w.Write(resp)
-	//}
-	//
-	//j.logger.Debug("handle", "response", string(resp))
 }
 
 type GetResponse struct {
