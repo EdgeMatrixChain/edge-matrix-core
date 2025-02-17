@@ -265,6 +265,7 @@ func (s *RelayClient) connectToRandomRelayNodes() {
 			s.logger.Error(re.Error())
 		} else {
 			s.addRelayPeerInfo(relayinfo, network.DirUnknown, resv)
+			// TODO increase relaynodeConnCount
 			s.logger.Info(fmt.Sprintf("reservation: LimitData=%d, LimitDuration=%v, Expiration=%v, Addrs=%v", resv.LimitData, resv.LimitDuration, resv.Expiration, resv.Addrs))
 		}
 	}
@@ -698,32 +699,39 @@ func (s *RelayClient) keepAliveToBootnodes() {
 	s.logger.Info("keepAliveToBootnodes doing...")
 
 	var (
-		bootnode *peer.AddrInfo // the reference bootnode
+		connectedRlayNode *peer.AddrInfo
 	)
 
 	// Try to find a suitable bootnode to use as a reference peer
-	for bootnode == nil {
+	for connectedRlayNode == nil {
 		// Get a random unconnected bootnode from the bootnode set
-		bootnode = s.GetRandomBootnode()
-		if bootnode == nil {
-			return
+		//bootnode = s.GetRandomBootnode()
+		relayPeers := s.RelayPeers()
+		if relayPeers != nil && len(relayPeers) > 0 {
+			connectedRlayNode = &relayPeers[0].Info
+		} else {
+			time.Sleep(1 * time.Second)
+			continue
 		}
 
+		// wait for application
 		for s.application == nil {
 			time.Sleep(1 * time.Second)
 		}
-		success, discovery, err := s.sayHello(bootnode.ID)
+
+		// say hello to connected relay node
+		success, discovery, err := s.sayHello(connectedRlayNode.ID)
 		if err != nil {
 			s.logger.Debug("Unable to execute bootnode peer alive call",
-				"bootnode", bootnode.ID.String(),
+				"bootnode", connectedRlayNode.ID.String(),
 				"err", err.Error(),
 			)
-			bootnode = nil
+			connectedRlayNode = nil
 			time.Sleep(1 * time.Second)
 		}
 		s.logger.Debug("keepAliveToBootnodes result", "success", success, "discovery", discovery)
 
-		// add a new found relay node
+		// add a relay node to s.relaynodes
 		if discovery != "" {
 			err := s.addRelaynodes([]string{discovery})
 			if err != nil {

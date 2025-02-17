@@ -47,7 +47,7 @@ type AliveService struct {
 // NewAliveService creates a new instance of the alive service
 func NewAliveService(
 	server networkingServer,
-	//routingTable *kb.RoutingTable,
+//routingTable *kb.RoutingTable,
 	logger hclog.Logger,
 	syncAppPeerClient application.SyncAppPeerClient,
 ) *AliveService {
@@ -91,6 +91,8 @@ func (d *AliveService) Hello(ctx context.Context, status *proto.AliveStatus) (*p
 		innerIp = isInnerIp(addrInfo.Addrs[0])
 	}
 	d.logger.Debug("-------->Alive status", "from", from, "name", status.Name, "app_origin", status.AppOrigin, "addr", addr, "relay", status.Relay)
+
+	// TODO get RelayProxyPort and put it into AppStatus
 	if !innerIp || status.Relay != "" {
 		d.syncAppPeerClient.PublishApplicationStatus(&appProto.AppStatus{
 			Name:         status.Name,

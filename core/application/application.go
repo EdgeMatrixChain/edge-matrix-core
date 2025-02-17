@@ -35,6 +35,10 @@ type Application struct {
 	GuageMax uint64
 	// average e power value
 	AveragePower float32
+	// relay host
+	RelayHost string
+	// proxy port of relay
+	RelayProxyPort uint64
 }
 
 func (a *Application) Copy() *Application {

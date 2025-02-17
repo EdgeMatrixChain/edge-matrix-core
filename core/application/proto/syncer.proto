@@ -69,4 +69,6 @@ message AppStatus {
   string gpu_info = 15;
   // version
   string version = 16;
+  // relay proxy port
+  uint64 relay_proxy_port = 17;
 }

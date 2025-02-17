@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+	ma "github.com/multiformats/go-multiaddr"
+	"net"
 	"strings"
 	"unicode"
 
@@ -97,6 +99,28 @@ func AddressToString(address Address) string {
 	return string(address[:])
 }
 
+func ExtractHostFromMultiaddr(maddr ma.Multiaddr) string {
+	var ip net.IP
+	var dnsHost string
+	ma.ForEach(maddr, func(c ma.Component) bool {
+		switch c.Protocol().Code {
+		case ma.P_IP4, ma.P_IP6:
+			ip = net.ParseIP(c.Value())
+		case ma.P_DNS4, ma.P_DNS6, ma.P_DNS:
+			dnsHost = c.Value()
+		}
+		return ip == nil && dnsHost == ""
+	})
+	if dnsHost != "" {
+		return dnsHost
+	}
+
+	if ip == nil {
+		return ""
+	}
+	return ip.String()
+}
+
 func BytesToAddress(b []byte) Address {
 	var a Address
 
@@ -145,14 +169,6 @@ func (h Hash) MarshalText() ([]byte, error) {
 func (a Address) MarshalText() ([]byte, error) {
 	return []byte(a.String()), nil
 }
-
-var (
-	// EmptyRootHash is the root when there are no transactions
-	EmptyRootHash = StringToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
-
-	// EmptyUncleHash is the root when there are no uncles
-	EmptyUncleHash = StringToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347")
-)
 
 type Proof struct {
 	Data     []Hash // the proof himself

@@ -194,6 +194,8 @@ func NewApplicationEndpoint(
 
 	go func() {
 		endpoint.httpHandler.AddHandler(TransparentRewardUrl, func(w http.ResponseWriter, r *http.Request) {
+			endpoint.logger.Debug(TransparentRewardUrl, "RemoteAddr", r.RemoteAddr, "Host", r.Host)
+
 			defer r.Body.Close()
 			body, err := io.ReadAll(r.Body)
 			if err != nil {

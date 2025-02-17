@@ -7,10 +7,12 @@ import (
 	"github.com/emc-protocol/edge-matrix-core/core/application/proto"
 	"github.com/emc-protocol/edge-matrix-core/core/network"
 	"github.com/emc-protocol/edge-matrix-core/core/network/event"
+	"github.com/emc-protocol/edge-matrix-core/core/types"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
+	ma "github.com/multiformats/go-multiaddr"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"regexp"
@@ -216,6 +218,7 @@ func (m *syncAppPeerClient) handleGossipAppStatusUpdate(obj interface{}, from pe
 		return
 	}
 
+	//  e.g: handleGossipAppStatusUpdate: from=16Uiu2HAm2NVWUi5uuYUn6NrzqDjQy4YVutz9cbjtsGRCnevzeM5i ID=16Uiu2HAmPkUzkeHwdGWmTJtFC9R4tq2VoNkN77Miv1oSQJBbyZkz Name="" Addr=/ip4/127.0.0.1/tcp/50001 Relay=/ip4/127.0.0.1/tcp/51004/p2p/16Uiu2HAm2NVWUi5uuYUn6NrzqDjQy4YVutz9cbjtsGRCnevzeM5i
 	m.logger.Debug("handleGossipAppStatusUpdate", "from", from.String(), "ID", status.NodeId, "Name", status.Name, "Addr", status.Addr, "Relay", status.Relay)
 
 	peerId, err := peer.Decode(status.NodeId)
@@ -228,28 +231,38 @@ func (m *syncAppPeerClient) handleGossipAppStatusUpdate(obj interface{}, from pe
 		ip_addr, _ = m.getMaskedIp(status.Addr)
 	}
 
+	relayHost := ""
+	if status.Relay != "" {
+		maddr, err := ma.NewMultiaddr(status.Relay)
+		if err != nil {
+			m.logger.Warn("handleGossipAppStatusUpdate", "from", from.String(), "ID", status.NodeId, "Relay", status.Relay, "Err", err.Error())
+		}
+		relayHost = types.ExtractHostFromMultiaddr(maddr)
+	}
+
+	// push event to jsonRpc
 	event := &Event{}
 	app := &Application{
-		Name:         status.Name,
-		PeerID:       peerId,
-		StartupTime:  status.StartupTime,
-		Uptime:       status.Uptime,
-		GuageHeight:  status.GuageHeight,
-		GuageMax:     status.GuageMax,
-		AppOrigin:    status.AppOrigin,
-		IpAddr:       ip_addr,
-		Mac:          status.Mac,
-		CpuInfo:      status.CpuInfo,
-		MemInfo:      status.MemInfo,
-		GpuInfo:      status.GpuInfo,
-		ModelHash:    status.ModelHash,
-		AveragePower: status.AveragePower,
-		Version:      status.Version,
+		Name:           status.Name,
+		PeerID:         peerId,
+		StartupTime:    status.StartupTime,
+		Uptime:         status.Uptime,
+		GuageHeight:    status.GuageHeight,
+		GuageMax:       status.GuageMax,
+		AppOrigin:      status.AppOrigin,
+		IpAddr:         ip_addr,
+		Mac:            status.Mac,
+		CpuInfo:        status.CpuInfo,
+		MemInfo:        status.MemInfo,
+		GpuInfo:        status.GpuInfo,
+		ModelHash:      status.ModelHash,
+		AveragePower:   status.AveragePower,
+		Version:        status.Version,
+		RelayHost:      relayHost,
+		RelayProxyPort: status.RelayProxyPort,
 	}
 	event.AddNewApp(app)
-	m.stream.push(event) // push to jsonRpc
-
-	// TODO validate AppStatus
+	m.stream.push(event)
 
 	// push appstatus to syncer
 	m.peerStatusUpdateCh <- &AppPeer{

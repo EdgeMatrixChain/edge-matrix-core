@@ -37,6 +37,4 @@ type Network interface {
 type ApplicationStore interface {
 	// ApplicationStore returns the application of endpoint
 	GetEndpointApplication() *Application
-	// UpdateApplicationPeer set/add application to applicationPeers map
-	//UpdateApplicationPeer(app *Application)
 }
