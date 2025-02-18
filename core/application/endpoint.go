@@ -1,8 +1,6 @@
 package application
 
 import (
-	"bufio"
-	"bytes"
 	"crypto/ecdsa"
 	"encoding/base64"
 	"encoding/json"
@@ -19,7 +17,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
-	"io"
 	"math/rand"
 	"net"
 	"net/http"
@@ -28,8 +25,7 @@ import (
 )
 
 const (
-	ProtoTagEcApp        = "/em-app"
-	TransparentRewardUrl = "/transparent_forward"
+	ProtoTagEcApp = "/em-app"
 )
 
 const (
@@ -193,75 +189,6 @@ func NewApplicationEndpoint(
 	}
 
 	go func() {
-		endpoint.httpHandler.AddHandler(TransparentRewardUrl, func(w http.ResponseWriter, r *http.Request) {
-			endpoint.logger.Debug(TransparentRewardUrl, "RemoteAddr", r.RemoteAddr, "Host", r.Host)
-
-			defer r.Body.Close()
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				_, _ = w.Write([]byte(err.Error()))
-				return
-			}
-
-			var transForward TransparentForward
-			if err := json.Unmarshal(body, &transForward); err != nil {
-				_, _ = w.Write([]byte(err.Error()))
-				return
-			}
-
-			client := &http.Client{}
-			targetURL := fmt.Sprintf("%s:%d/%s", endpoint.appUrl, transForward.EdgePath.Port, transForward.EdgePath.InterfaceURL)
-			endpoint.logger.Debug(TransparentRewardUrl, "targetURL", targetURL)
-
-			req, err := http.NewRequest(r.Method, targetURL, bytes.NewReader([]byte(transForward.Payload)))
-			if err != nil {
-				http.Error(w, "Failed to create request", http.StatusInternalServerError)
-				return
-			}
-
-			for key, values := range r.Header {
-				for _, value := range values {
-					req.Header.Add(key, value)
-				}
-			}
-
-			resp, err := client.Do(req)
-			if err != nil {
-				http.Error(w, "Failed to connect to target server", http.StatusInternalServerError)
-				return
-			}
-			defer resp.Body.Close()
-
-			for key, value := range resp.Header {
-				w.Header().Set(key, value[0])
-			}
-			w.WriteHeader(resp.StatusCode)
-			if resp.Header.Get("Content-Type") == "text/event-stream" {
-				reader := bufio.NewReader(resp.Body)
-				for {
-					line, err := reader.ReadBytes('\n')
-					if err != nil {
-						if err == io.EOF {
-							endpoint.logger.Warn(TransparentRewardUrl, "err", "SSE stream closed by server")
-							return
-						}
-						endpoint.logger.Warn(TransparentRewardUrl, "err", fmt.Sprintf("Error reading SSE stream: %v\n", err))
-						return
-					}
-
-					_, err = w.Write(line)
-					if err != nil {
-						endpoint.logger.Warn(TransparentRewardUrl, "err", fmt.Sprintf("Error writing to client: %v\n", err))
-						return
-					}
-
-					w.(http.Flusher).Flush()
-				}
-			} else {
-				io.Copy(w, resp.Body)
-			}
-		})
-
 		endpoint.httpHandler.AddHandler("/health", func(w http.ResponseWriter, r *http.Request) {
 			defer r.Body.Close()
 			var health struct {
