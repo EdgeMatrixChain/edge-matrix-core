@@ -65,21 +65,23 @@ type Config struct {
 }
 
 // NewTransportProxy returns the TransparentProxy http server
-func NewTransportProxy(logger hclog.Logger, config *Config) (*TransparentProxy, error) {
+func NewTransportProxy(logger hclog.Logger, config *Config, middlewareFactory MiddlewareFactory) (*TransparentProxy, error) {
 	srv := &TransparentProxy{
 		logger: logger.Named("transport-proxy"),
 		config: config,
 	}
 
 	// start http server
-	if err := srv.setupHTTP(); err != nil {
+	if err := srv.setupHTTP(middlewareFactory); err != nil {
 		return nil, err
 	}
 
 	return srv, nil
 }
 
-func (j *TransparentProxy) setupHTTP() error {
+type MiddlewareFactory func() func(http.Handler) http.Handler
+
+func (j *TransparentProxy) setupHTTP(middlewareFactory MiddlewareFactory) error {
 	j.logger.Info("http server started", "addr", j.config.Addr.String())
 
 	lis, err := net.Listen("tcp", j.config.Addr.String())
@@ -94,7 +96,12 @@ func (j *TransparentProxy) setupHTTP() error {
 
 	// The middleware factory returns a handler, so we need to wrap the handler function properly.
 	proxyHandler := http.HandlerFunc(j.handle)
-	mux.Handle("/", middlewareFactory(j.config)(proxyHandler))
+
+	if middlewareFactory != nil {
+		mux.Handle("/", middlewareFactory()(proxyHandler))
+	} else {
+		mux.Handle("/", defaultMiddlewareFactory(j.config)(proxyHandler))
+	}
 
 	// TODO implement websocket handler
 	//mux.HandleFunc("/edge_ws", j.handleWs)
@@ -113,8 +120,8 @@ func (j *TransparentProxy) setupHTTP() error {
 	return nil
 }
 
-// The middlewareFactory builds a middleware which enables CORS using the provided config.
-func middlewareFactory(config *Config) func(http.Handler) http.Handler {
+// The defaultMiddlewareFactory builds a middleware which enables CORS using the provided config.
+func defaultMiddlewareFactory(config *Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
@@ -138,13 +145,6 @@ func middlewareFactory(config *Config) func(http.Handler) http.Handler {
 }
 
 func (j *TransparentProxy) handle(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-	w.Header().Set(
-		"Access-Control-Allow-Headers",
-		"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization",
-	)
-
 	switch req.Method {
 	case "POST":
 		j.handlePostRequest(w, req)
