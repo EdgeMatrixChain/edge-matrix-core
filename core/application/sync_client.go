@@ -219,7 +219,7 @@ func (m *syncAppPeerClient) handleGossipAppStatusUpdate(obj interface{}, from pe
 	}
 
 	//  e.g: handleGossipAppStatusUpdate: from=16Uiu2HAm2NVWUi5uuYUn6NrzqDjQy4YVutz9cbjtsGRCnevzeM5i ID=16Uiu2HAmPkUzkeHwdGWmTJtFC9R4tq2VoNkN77Miv1oSQJBbyZkz Name="" Addr=/ip4/127.0.0.1/tcp/50001 Relay=/ip4/127.0.0.1/tcp/51004/p2p/16Uiu2HAm2NVWUi5uuYUn6NrzqDjQy4YVutz9cbjtsGRCnevzeM5i
-	m.logger.Debug("handleGossipAppStatusUpdate", "from", from.String(), "ID", status.NodeId, "Name", status.Name, "Addr", status.Addr, "Relay", status.Relay)
+	m.logger.Debug("handleGossipAppStatusUpdate", "from", from.String(), "ID", status.NodeId, "Name", status.Name, "Addr", status.Addr, "Relay", status.Relay, "RelayProxyPort", status.RelayProxyPort)
 
 	peerId, err := peer.Decode(status.NodeId)
 	if err != nil {

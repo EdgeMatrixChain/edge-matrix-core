@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"github.com/emc-protocol/edge-matrix-core/core/application"
-	emcNetwork "github.com/emc-protocol/edge-matrix-core/core/network"
+	appProto "github.com/emc-protocol/edge-matrix-core/core/application/proto"
 	"github.com/emc-protocol/edge-matrix-core/core/network/common"
 	"github.com/emc-protocol/edge-matrix-core/core/network/grpc"
 	"github.com/emc-protocol/edge-matrix-core/core/relay/proto"
@@ -22,6 +22,7 @@ import (
 	rawGrpc "google.golang.org/grpc"
 	"log"
 	"math/big"
+	"net"
 	"sync"
 	"time"
 )
@@ -72,6 +73,18 @@ type RelayServer struct {
 	relaynodes *relaynodesWrapper // reference of all relaynodes for the node
 
 	host host.Host // the libp2p host reference
+
+	syncAppPeerClient application.SyncAppPeerClient
+
+	proxyAddr *net.TCPAddr
+}
+
+func (s *RelayServer) PublishApplicationStatus(status *appProto.AppStatus) {
+	s.syncAppPeerClient.PublishApplicationStatus(status)
+}
+
+func (s *RelayServer) GetRelayProxyAddr() *net.TCPAddr {
+	return s.proxyAddr
 }
 
 func (s *RelayServer) GetHost() host.Host {
@@ -144,7 +157,7 @@ func (s *RelayServer) registerAliveService(aliveService *AliveService) {
 }
 
 // NewRelayServer returns a new instance of the relay server
-func NewRelayServer(logger hclog.Logger, secretsManager secrets.SecretsManager, relayListenAddr multiaddr.Multiaddr, config *emcNetwork.Config, RelayDiscovery bool, relayNodes []string) (*RelayServer, error) {
+func NewRelayServer(logger hclog.Logger, secretsManager secrets.SecretsManager, relayListenAddr multiaddr.Multiaddr, proxyAddr *net.TCPAddr, syncAppPeerClient application.SyncAppPeerClient, RelayDiscovery bool, relayNodes []string) (*RelayServer, error) {
 	logger = logger.Named("relay-server")
 
 	key, err := setupLibp2pKey(secretsManager)
@@ -180,9 +193,11 @@ func NewRelayServer(logger hclog.Logger, secretsManager secrets.SecretsManager, 
 	}
 
 	srv := &RelayServer{
-		logger:    logger,
-		host:      relayHost,
-		protocols: map[string]Protocol{},
+		logger:            logger,
+		host:              relayHost,
+		protocols:         map[string]Protocol{},
+		syncAppPeerClient: syncAppPeerClient,
+		proxyAddr:         proxyAddr,
 	}
 
 	if RelayDiscovery {

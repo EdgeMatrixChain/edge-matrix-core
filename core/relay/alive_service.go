@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
+	"net"
 	"regexp"
 	"sync"
 )
@@ -25,6 +26,11 @@ type networkingServer interface {
 
 	// GetPeerAddrInfo fetches the AddrInfo of a peer
 	GetPeerAddrInfo(peerID peer.ID) peer.AddrInfo
+
+	// PublishApplicationStatus publish application status
+	PublishApplicationStatus(status *appProto.AppStatus)
+
+	GetRelayProxyAddr() *net.TCPAddr
 
 	GetRandomBootnode() *peer.AddrInfo
 }
@@ -47,7 +53,7 @@ type AliveService struct {
 // NewAliveService creates a new instance of the alive service
 func NewAliveService(
 	server networkingServer,
-//routingTable *kb.RoutingTable,
+	//routingTable *kb.RoutingTable,
 	logger hclog.Logger,
 	syncAppPeerClient application.SyncAppPeerClient,
 ) *AliveService {
@@ -92,23 +98,30 @@ func (d *AliveService) Hello(ctx context.Context, status *proto.AliveStatus) (*p
 	}
 	d.logger.Debug("-------->Alive status", "from", from, "name", status.Name, "app_origin", status.AppOrigin, "addr", addr, "relay", status.Relay)
 
-	// TODO get RelayProxyPort and put it into AppStatus
+	// get RelayProxyPort and put it into AppStatus
+	proxyPort := 0
+	proxyAddr := d.baseServer.GetRelayProxyAddr()
+	if proxyAddr != nil {
+		proxyPort = proxyAddr.Port
+	}
+
 	if !innerIp || status.Relay != "" {
-		d.syncAppPeerClient.PublishApplicationStatus(&appProto.AppStatus{
-			Name:         status.Name,
-			NodeId:       from.String(),
-			Uptime:       status.Uptime,
-			StartupTime:  status.StartupTime,
-			Relay:        status.Relay,
-			Addr:         addr,
-			AppOrigin:    status.AppOrigin,
-			Mac:          status.Mac,
-			CpuInfo:      status.CpuInfo,
-			GpuInfo:      status.GpuInfo,
-			MemInfo:      status.MemInfo,
-			ModelHash:    status.ModelHash,
-			AveragePower: status.AveragePower,
-			Version:      status.Version,
+		d.baseServer.PublishApplicationStatus(&appProto.AppStatus{
+			Name:           status.Name,
+			NodeId:         from.String(),
+			Uptime:         status.Uptime,
+			StartupTime:    status.StartupTime,
+			Relay:          status.Relay,
+			Addr:           addr,
+			AppOrigin:      status.AppOrigin,
+			Mac:            status.Mac,
+			CpuInfo:        status.CpuInfo,
+			GpuInfo:        status.GpuInfo,
+			MemInfo:        status.MemInfo,
+			ModelHash:      status.ModelHash,
+			AveragePower:   status.AveragePower,
+			Version:        status.Version,
+			RelayProxyPort: uint64(proxyPort),
 		})
 	}
 
