@@ -10,7 +10,6 @@ import (
 	"github.com/emc-protocol/edge-matrix-core/core/crypto"
 	"github.com/emc-protocol/edge-matrix-core/core/helper/rpc"
 	"github.com/emc-protocol/edge-matrix-core/core/types"
-	"github.com/emc-protocol/edge-matrix-core/core/versioning"
 	"github.com/hashicorp/go-hclog"
 	gostream "github.com/libp2p/go-libp2p-gostream"
 	p2phttp "github.com/libp2p/go-libp2p-http"
@@ -29,7 +28,7 @@ const (
 )
 
 const (
-	DefaultAppStatusSyncDuration = 60 * time.Second
+	DefaultAppStatusSyncDuration = 30 * time.Second
 )
 
 type Endpoint struct {
@@ -118,6 +117,7 @@ func NewApplicationEndpoint(
 	name string,
 	appUrl string,
 	appPort uint64,
+	version string,
 	isEdgeMode bool) (*Endpoint, error) {
 	endpoint := &Endpoint{
 		logger:              logger.Named("app_endpoint"),
@@ -166,7 +166,7 @@ func NewApplicationEndpoint(
 		CpuInfo:     helper.GetCpuInfo(),
 		GpuInfo:     helper.GetGpuInfo(),
 		MemInfo:     helper.GetMemInfo(),
-		Version:     versioning.Version + " Build" + versioning.Build,
+		Version:     version,
 	}
 
 	// check app status
