@@ -673,8 +673,6 @@ func (s *RelayClient) sayHello(
 }
 
 // startAliveService starts the AliveService loop,
-// in which random peers are dialed for their peer sets,
-// and random bootnodes are dialed for their peer sets
 func (s *RelayClient) startAliveService() {
 	go s.keepAliveToBootnodes()
 	bootnodeAliveTicker := time.NewTicker(bootnodeAliveInterval)
@@ -704,8 +702,6 @@ func (s *RelayClient) keepAliveToBootnodes() {
 
 	// Try to find a suitable bootnode to use as a reference peer
 	for connectedRlayNode == nil {
-		// Get a random unconnected bootnode from the bootnode set
-		//bootnode = s.GetRandomBootnode()
 		relayPeers := s.RelayPeers()
 		if relayPeers != nil && len(relayPeers) > 0 {
 			connectedRlayNode = &relayPeers[0].Info

@@ -29,7 +29,7 @@ const (
 )
 
 const (
-	DefaultAppStatusSyncDuration = 15 * time.Second
+	DefaultAppStatusSyncDuration = 60 * time.Second
 )
 
 type Endpoint struct {
