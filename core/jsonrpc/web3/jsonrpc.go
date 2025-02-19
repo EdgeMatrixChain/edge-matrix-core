@@ -3,13 +3,13 @@ package web3
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/libp2p/go-libp2p/core/host"
 	"io"
 	"net"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/emc-protocol/edge-matrix-core/core/versioning"
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-hclog"
 )
@@ -42,6 +42,12 @@ type JSONRPC struct {
 	dispatcher dispatcher
 }
 
+// networkStore provides methods needed for edge endpoint
+type networkStore interface {
+	GetPeers() int
+	GetHost() host.Host
+}
+
 type dispatcher interface {
 	RemoveFilterByWs(conn wsConn)
 	HandleWs(reqBody []byte, conn wsConn) ([]byte, error)
@@ -62,7 +68,8 @@ type Config struct {
 	Store                    JSONRPCStore
 	Addr                     *net.TCPAddr
 	NetworkID                uint64
-	ChainName                string
+	NetworkName              string
+	Version                  string
 	AccessControlAllowOrigin []string
 }
 
@@ -75,8 +82,8 @@ func NewJSONRPC(logger hclog.Logger, config *Config) (*JSONRPC, error) {
 			logger,
 			config.Store,
 			&dispatcherParams{
-				chainID:   config.NetworkID,
-				chainName: config.ChainName,
+				networkID:   config.NetworkID,
+				networkName: config.NetworkName,
 			},
 		),
 	}
@@ -302,16 +309,16 @@ func (j *JSONRPC) handleJSONRPCRequest(w http.ResponseWriter, req *http.Request)
 }
 
 type GetResponse struct {
-	Name    string `json:"name"`
-	ChainID uint64 `json:"chain_id"`
-	Version string `json:"version"`
+	Name      string `json:"name"`
+	NetworkID uint64 `json:"networkID"`
+	Version   string `json:"version"`
 }
 
 func (j *JSONRPC) handleGetRequest(writer io.Writer) {
 	data := &GetResponse{
-		Name:    j.config.ChainName,
-		ChainID: j.config.NetworkID,
-		Version: versioning.Version,
+		Name:      j.config.NetworkName,
+		NetworkID: j.config.NetworkID,
+		Version:   j.config.Version,
 	}
 
 	resp, err := json.Marshal(data)

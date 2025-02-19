@@ -33,7 +33,6 @@ func (f *funcData) numParams() int {
 
 type endpoints struct {
 	Edge *Edge
-	Net  *Net
 	//TelePool *TelePool
 }
 
@@ -49,8 +48,8 @@ type Dispatcher struct {
 }
 
 type dispatcherParams struct {
-	chainID   uint64
-	chainName string
+	networkID   uint64
+	networkName string
 
 	priceLimit              uint64
 	jsonRPCBatchLengthLimit uint64
@@ -83,20 +82,11 @@ func (d *Dispatcher) registerEndpoints(store JSONRPCStore) {
 	d.endpoints.Edge = &Edge{
 		d.logger,
 		store,
-		d.params.chainID,
+		d.params.networkID,
 		d.nodeFilterManager,
 	}
-	d.endpoints.Net = &Net{
-		store,
-		d.params.chainID,
-	}
-	//d.endpoints.TelePool = &TelePool{
-	//	store,
-	//}
 
 	d.registerService("edge", d.endpoints.Edge)
-	d.registerService("net", d.endpoints.Net)
-	//d.registerService("telepool", d.endpoints.TelePool)
 }
 
 func (d *Dispatcher) getFnHandler(req Request) (*serviceData, *funcData, jsonrpc.Error) {

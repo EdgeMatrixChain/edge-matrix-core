@@ -31,15 +31,15 @@ type edgeStore interface {
 type Edge struct {
 	logger        hclog.Logger
 	store         edgeStore
-	chainID       uint64
+	networkID     uint64
 	filterManager *NodeFilterManager
 }
 
-// ChainId returns the chain id of the client
+// NetworkId returns the network id of the client
 //
 //nolint:stylecheck
-func (e *Edge) ChainId() (interface{}, error) {
-	return argUintPtr(e.chainID), nil
+func (e *Edge) NetworkId() (interface{}, error) {
+	return argUintPtr(e.networkID), nil
 }
 
 // SendRawTelegram sends a raw telegram
