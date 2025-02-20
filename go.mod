@@ -18,7 +18,7 @@ require (
 	github.com/libp2p/go-libp2p-gostream v0.6.0
 	github.com/libp2p/go-libp2p-http v0.5.0
 	github.com/libp2p/go-libp2p-kad-dht v0.29.0
-	github.com/libp2p/go-libp2p-kbucket v0.6.4q
+	github.com/libp2p/go-libp2p-kbucket v0.6.4
 	github.com/libp2p/go-libp2p-pubsub v0.13.0
 	github.com/multiformats/go-multiaddr v0.14.0
 	github.com/shirou/gopsutil/v3 v3.23.5
