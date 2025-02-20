@@ -29,17 +29,11 @@ const (
 	// ValidatorKey is the private key secret of the validator node
 	ValidatorKey = "validator-key"
 
-	// ValidatorBLSKey is the bls secret key of the validator node
-	ValidatorBLSKey = "validator-bls-key"
-	
 	// SecureFlag is the key preffix of the key
 	SecureFlag = "secure-"
 
 	// NetworkKey is the libp2p private key secret used for networking
 	NetworkKey = "network-key"
-
-	// ValidatorBLSSignature is the BLS signature of the validator node
-	ValidatorBLSSignature = "validator-bls-signature"
 )
 
 const (
@@ -48,11 +42,8 @@ const (
 
 // Define constant file names for the local StorageManager
 const (
-	ValidatorKeyLocal          = "validator.key"
-	ValidatorBLSKeyLocal       = "validator-bls.key"
-	ICPIdentityKeyLocal        = "identity.key"
-	NetworkKeyLocal            = "libp2p.key"
-	ValidatorBLSSignatureLocal = "validator.sig"
+	ValidatorKeyLocal = "validator.key"
+	NetworkKeyLocal   = "libp2p.key"
 )
 
 // Define constant folder names for the local StorageManager
@@ -113,12 +104,12 @@ type SecretsManagerParams struct {
 
 // SecretsManagerFactory is the factory method for secrets managers
 type SecretsManagerFactory func(
-// config contains the necessary configuration saved to / read from json.
-// It is used to configure the SecretsManager with information saved in advance
+	// config contains the necessary configuration saved to / read from json.
+	// It is used to configure the SecretsManager with information saved in advance
 	config *SecretsManagerConfig,
 
-// params contains the runtime configuration parameters, such as the logger used,
-// as well as any additional data the secrets manager might need (SecretsManagerParams.Extra field)
+	// params contains the runtime configuration parameters, such as the logger used,
+	// as well as any additional data the secrets manager might need (SecretsManagerParams.Extra field)
 	params *SecretsManagerParams,
 ) (SecretsManager, error)
 

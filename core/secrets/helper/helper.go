@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/emc-protocol/edge-matrix-core/core/crypto"
-	"github.com/emc-protocol/edge-matrix-core/core/helper/hex"
 	"github.com/emc-protocol/edge-matrix-core/core/network"
 	"github.com/emc-protocol/edge-matrix-core/core/secrets"
 	"github.com/emc-protocol/edge-matrix-core/core/secrets/awsssm"
@@ -150,55 +149,6 @@ func EncryptECDSAValidatorKey(secretsManager secrets.SecretsManager, secretsPass
 	return nil
 }
 
-func InitBLSValidatorKey(secretsManager secrets.SecretsManager) ([]byte, error) {
-	if secretsManager.HasSecret(secrets.ValidatorBLSKey) {
-		return nil, fmt.Errorf(`secrets "%s" has been already initialized`, secrets.ValidatorBLSKey)
-	}
-
-	blsSecretKey, blsSecretKeyEncoded, err := crypto.GenerateAndEncodeBLSSecretKey()
-	if err != nil {
-		return nil, err
-	}
-
-	// Write the validator private key to the secrets manager storage
-	if setErr := secretsManager.SetSecret(
-		secrets.ValidatorBLSKey,
-		blsSecretKeyEncoded,
-	); setErr != nil {
-		return nil, setErr
-	}
-
-	pubkeyBytes, err := crypto.BLSSecretKeyToPubkeyBytes(blsSecretKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return pubkeyBytes, nil
-}
-
-func EncryptBLSValidatorKey(secretsManager secrets.SecretsManager, secretsPass string) error {
-	privKey := ""
-	if secretsManager.HasSecret(secrets.ValidatorBLSKey) {
-		validatorKey, err := secretsManager.GetSecret(secrets.ValidatorBLSKey)
-		if err != nil {
-			return err
-		}
-		privKey = string(validatorKey)
-	} else {
-		// generate BLS key private key for validator
-		_, blsSecretKeyEncoded, err := crypto.GenerateAndEncodeBLSSecretKey()
-		if err != nil {
-			return err
-		}
-		privKey = string(blsSecretKeyEncoded)
-	}
-	err2 := SetEncryptedKey(secretsManager, secrets.ValidatorBLSKey, secretsPass, privKey)
-	if err2 != nil {
-		return err2
-	}
-	return nil
-}
-
 func InitNetworkingPrivateKey(secretsManager secrets.SecretsManager) (libp2pCrypto.PrivKey, error) {
 	if secretsManager.HasSecret(secrets.NetworkKey) {
 		return nil, fmt.Errorf(`secrets "%s" has been already initialized`, secrets.NetworkKey)
@@ -263,30 +213,6 @@ func LoadValidatorAddress(secretsManager secrets.SecretsManager) (types.Address,
 	return crypto.PubKeyToAddress(&privateKey.PublicKey), nil
 }
 
-// LoadBLSPublicKey loads BLS key by SecretsManager and returns BLS Public Key
-func LoadBLSPublicKey(secretsManager secrets.SecretsManager) (string, error) {
-	if !secretsManager.HasSecret(secrets.ValidatorBLSKey) {
-		return "", nil
-	}
-
-	encodedKey, err := secretsManager.GetSecret(secrets.ValidatorBLSKey)
-	if err != nil {
-		return "", err
-	}
-
-	secretKey, err := crypto.BytesToBLSSecretKey(encodedKey)
-	if err != nil {
-		return "", err
-	}
-
-	pubkeyBytes, err := crypto.BLSSecretKeyToPubkeyBytes(secretKey)
-	if err != nil {
-		return "", err
-	}
-
-	return hex.EncodeToHex(pubkeyBytes), nil
-}
-
 // LoadNodeID loads Libp2p key by SecretsManager and returns Node ID
 func LoadNodeID(secretsManager secrets.SecretsManager) (string, error) {
 	if !secretsManager.HasSecret(secrets.NetworkKey) {
@@ -309,17 +235,6 @@ func LoadNodeID(secretsManager secrets.SecretsManager) (string, error) {
 	}
 
 	return nodeID.String(), nil
-}
-
-// LoadBLSSignature loads BLS Signature from SecretsManager and returns it
-func LoadBLSSignature(secretsManager secrets.SecretsManager) (string, error) {
-	if !secretsManager.HasSecret(secrets.ValidatorBLSSignature) {
-		return "", nil
-	}
-
-	s, err := secretsManager.GetSecret(secrets.ValidatorBLSSignature)
-
-	return string(s), err
 }
 
 // InitCloudSecretsManager returns the cloud secrets manager from the provided config
@@ -354,17 +269,3 @@ func InitCloudSecretsManager(secretsConfig *secrets.SecretsManagerConfig) (secre
 
 	return secretsManager, nil
 }
-
-// MakeKOSKSignature creates KOSK signature which prevents rogue attack
-//func MakeKOSKSignature(
-//	privateKey *bls.PrivateKey, address types.Principal, chainID int64, domain []byte) (*bls.Signature, error) {
-//	message, err := abi.Encode(
-//		[]interface{}{address, big.NewInt(chainID)},
-//		abi.MustNewType("tuple(address, uint256)"))
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	// abi.Encode adds 12 zero bytes before actual address bytes
-//	return privateKey.Sign(message[12:], domain)
-//}
