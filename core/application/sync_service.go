@@ -6,9 +6,9 @@ import (
 	"github.com/emc-protocol/edge-matrix-core/core/application/proto"
 	"github.com/emc-protocol/edge-matrix-core/core/network"
 	"github.com/emc-protocol/edge-matrix-core/core/network/grpc"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type syncAppService struct {
@@ -101,7 +101,7 @@ func (s *syncAppService) GetData(
 // GetStatus is a gRPC endpoint to return the latest  application status
 func (s *syncAppService) GetStatus(
 	ctx context.Context,
-	req *empty.Empty,
+	req *emptypb.Empty,
 ) (*proto.AppStatus, error) {
 	application := s.applicationStore.GetEndpointApplication()
 	return &proto.AppStatus{
