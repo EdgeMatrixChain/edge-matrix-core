@@ -60,18 +60,18 @@ func calcResponseHash(resp *EdgeResponse, chainID uint64) types.Hash {
 }
 
 // NewEIP155Signer returns a new EIP155Signer object
-func NewEIP155Signer(forks ForksInTime, chainID uint64) *EIP155Signer {
-	return &EIP155Signer{chainID: chainID, isHomestead: forks.Homestead}
+func NewEIP155Signer(forks crypto.ForksInTime, networkID uint64) *EIP155Signer {
+	return &EIP155Signer{networkID: networkID, isHomestead: forks.Homestead}
 }
 
 type EIP155Signer struct {
-	chainID     uint64
+	networkID   uint64
 	isHomestead bool
 }
 
-// Hash is a wrapper function that calls calcCallHash with the EIP155Signer's chainID
+// Hash is a wrapper function that calls calcCallHash with the EIP155Signer's networkID
 func (e *EIP155Signer) Hash(resp *EdgeResponse) types.Hash {
-	return calcResponseHash(resp, e.chainID)
+	return calcResponseHash(resp, e.networkID)
 }
 
 // Provider returns the telegram provider
@@ -84,7 +84,7 @@ func (e *EIP155Signer) Provider(resp *EdgeResponse) (types.Address, error) {
 
 	// Reverse the V calculation to find the original V in the range [0, 1]
 	// v = CHAIN_ID * 2 + 35 + {0, 1}
-	mulOperand := big.NewInt(0).Mul(big.NewInt(int64(e.chainID)), big.NewInt(2))
+	mulOperand := big.NewInt(0).Mul(big.NewInt(int64(e.networkID)), big.NewInt(2))
 	bigV.Sub(bigV, mulOperand)
 	bigV.Sub(bigV, big35)
 
@@ -129,7 +129,7 @@ func (e *EIP155Signer) CalculateV(parity byte) []byte {
 	reference := big.NewInt(int64(parity))
 	reference.Add(reference, big35)
 
-	mulOperand := big.NewInt(0).Mul(big.NewInt(int64(e.chainID)), big.NewInt(2))
+	mulOperand := big.NewInt(0).Mul(big.NewInt(int64(e.networkID)), big.NewInt(2))
 
 	reference.Add(reference, mulOperand)
 

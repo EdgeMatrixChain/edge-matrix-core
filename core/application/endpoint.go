@@ -16,7 +16,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/protocol"
-	"math/rand"
 	"net"
 	"net/http"
 	"sync"
@@ -54,11 +53,6 @@ type Endpoint struct {
 	stream     *eventStream // Event subscriptions
 
 	application *Application
-
-	randomNum int
-
-	latestBlockHeadHash string
-	latestBlockNum      uint64
 
 	isEdgeMode bool
 
@@ -120,21 +114,18 @@ func NewApplicationEndpoint(
 	version string,
 	isEdgeMode bool) (*Endpoint, error) {
 	endpoint := &Endpoint{
-		logger:              logger.Named("app_endpoint"),
-		name:                name,
-		appUrl:              appUrl,
-		appPort:             appPort,
-		appOrigin:           "",
-		h:                   srvHost,
-		tag:                 ProtoTagEcApp,
-		stream:              &eventStream{},
-		nonceCacheEnable:    false,
-		latestBlockHeadHash: "",
-		latestBlockNum:      0,
-		isEdgeMode:          isEdgeMode,
-		httpHandler:         &EndpointHandler{routes: make(map[string]func(w http.ResponseWriter, r *http.Request))},
+		logger:           logger.Named("app_endpoint"),
+		name:             name,
+		appUrl:           appUrl,
+		appPort:          appPort,
+		appOrigin:        "",
+		h:                srvHost,
+		tag:              ProtoTagEcApp,
+		stream:           &eventStream{},
+		nonceCacheEnable: false,
+		isEdgeMode:       isEdgeMode,
+		httpHandler:      &EndpointHandler{routes: make(map[string]func(w http.ResponseWriter, r *http.Request))},
 	}
-	endpoint.randomNum = rand.Intn(1000)
 	endpoint.httpClient = rpc.NewDefaultHttpClient()
 	listener, err := gostream.Listen(srvHost, ProtoTagEcApp)
 	if err != nil {

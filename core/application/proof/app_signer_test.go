@@ -46,7 +46,7 @@ func TestEIP155Signer_Provider(t *testing.T) {
 				RespString: `{"code":0,"text":"abc"}`,
 			}
 
-			signer := NewEIP155Signer(AllForksEnabled.At(0), testCase.chainID.Uint64())
+			signer := NewEIP155Signer(crypto.AllForksEnabled.At(0), testCase.chainID.Uint64())
 
 			signedResp, signErr := signer.SignEdgeResp(resp, key)
 			if signErr != nil {

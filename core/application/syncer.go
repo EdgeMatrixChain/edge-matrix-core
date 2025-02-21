@@ -24,16 +24,11 @@ type syncer struct {
 	syncAppPeerClient  SyncAppPeerClient
 	syncAppPeerService SyncAppPeerService
 
-	// Timeout for syncing a block
-	blockTimeout time.Duration
-
 	// Channel to notify Sync that a new status arrived
 	newStatusCh chan struct{}
 
 	host             host.Host
 	applicationStore ApplicationStore
-
-	peersBlockNumMap map[peer.ID]uint64
 }
 
 type Syncer interface {
@@ -60,7 +55,6 @@ func NewSyncer(
 		peerMap:            new(PeerMap),
 		host:               host,
 		applicationStore:   applicationStore,
-		peersBlockNumMap:   make(map[peer.ID]uint64),
 	}
 }
 

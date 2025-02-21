@@ -51,9 +51,7 @@ type dispatcherParams struct {
 	networkID   uint64
 	networkName string
 
-	priceLimit              uint64
 	jsonRPCBatchLengthLimit uint64
-	blockRangeLimit         uint64
 }
 
 func newDispatcher(

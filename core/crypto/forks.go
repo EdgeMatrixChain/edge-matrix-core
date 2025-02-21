@@ -1,4 +1,4 @@
-package proof
+package crypto
 
 import (
 	"math/big"
