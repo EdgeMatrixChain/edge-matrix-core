@@ -18,8 +18,6 @@ type syncAppService struct {
 	applicationStore ApplicationStore
 	network          *network.Server
 	stream           *grpc.GrpcStream // reference to the grpc stream
-
-	//peersBlockNumMap map[peer.ID]uint64
 }
 
 type SyncAppPeerService interface {

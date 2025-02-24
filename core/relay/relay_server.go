@@ -131,7 +131,6 @@ func (s *RelayServer) SetupAliveService(syncAppPeerClient application.SyncAppPee
 	// Create an instance of the alive service
 	aliveService := NewAliveService(
 		s,
-		//routingTable,
 		s.logger,
 		syncAppPeerClient,
 	)

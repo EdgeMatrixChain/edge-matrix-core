@@ -47,7 +47,7 @@ type AliveService struct {
 	//routingTable *kb.RoutingTable // Kademlia 'k-bucket' routing table that contains connected nodes info
 
 	syncAppPeerClient application.SyncAppPeerClient
-	closeCh           chan struct{} // Channel used for stopping the AliveService
+	//closeCh           chan struct{} // Channel used for stopping the AliveService
 }
 
 // NewAliveService creates a new instance of the alive service
@@ -62,14 +62,14 @@ func NewAliveService(
 		baseServer: server,
 		//routingTable:      routingTable,
 		syncAppPeerClient: syncAppPeerClient,
-		closeCh:           make(chan struct{}),
+		//closeCh:           make(chan struct{}),
 	}
 }
 
 // Close stops the discovery service
-func (d *AliveService) Close() {
-	close(d.closeCh)
-}
+//func (d *AliveService) Close() {
+//	close(d.closeCh)
+//}
 
 // RoutingTableSize returns the size of the routing table
 //func (d *AliveService) RoutingTableSize() int {

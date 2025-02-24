@@ -33,7 +33,6 @@ type syncAppPeerClient struct {
 	host             host.Host
 	applicationStore ApplicationStore
 
-	//subscription           Subscription          // reference to the application subscription
 	stream *eventStream // Event subscriptions
 
 	topic                  *network.Topic        // reference to the network topic
@@ -79,12 +78,6 @@ func (m *syncAppPeerClient) Close() {
 	if m.topic != nil {
 		m.topic.Close()
 	}
-
-	//if m.subscription != nil {
-	//	m.subscription.Close()
-	//
-	//	m.subscription = nil
-	//}
 
 	if m.closeCh != nil {
 		close(m.closeCh)

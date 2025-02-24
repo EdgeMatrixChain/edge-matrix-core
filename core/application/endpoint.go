@@ -54,8 +54,6 @@ type Endpoint struct {
 
 	application *Application
 
-	isEdgeMode bool
-
 	httpHandler *EndpointHandler
 }
 
@@ -111,8 +109,7 @@ func NewApplicationEndpoint(
 	name string,
 	appUrl string,
 	appPort uint64,
-	version string,
-	isEdgeMode bool) (*Endpoint, error) {
+	version string) (*Endpoint, error) {
 	endpoint := &Endpoint{
 		logger:           logger.Named("app_endpoint"),
 		name:             name,
@@ -123,7 +120,6 @@ func NewApplicationEndpoint(
 		tag:              ProtoTagEcApp,
 		stream:           &eventStream{},
 		nonceCacheEnable: false,
-		isEdgeMode:       isEdgeMode,
 		httpHandler:      &EndpointHandler{routes: make(map[string]func(w http.ResponseWriter, r *http.Request))},
 	}
 	endpoint.httpClient = rpc.NewDefaultHttpClient()
@@ -160,24 +156,22 @@ func NewApplicationEndpoint(
 		Version:     version,
 	}
 
-	// check app status
-	if isEdgeMode {
-		go func() {
-			ticker := time.NewTicker(DefaultAppStatusSyncDuration)
-			for {
-				<-ticker.C
-				event := &Event{}
-				endpoint.application.Uptime = uint64(time.Now().UnixMilli()) - endpoint.application.StartupTime
-				endpoint.application.MemInfo = helper.GetMemInfo()
-				endpoint.application.GpuInfo = helper.GetGpuInfo()
+	// update app status
+	go func() {
+		ticker := time.NewTicker(DefaultAppStatusSyncDuration)
+		defer ticker.Stop()
+		for {
+			<-ticker.C
+			event := &Event{}
+			endpoint.application.Uptime = uint64(time.Now().UnixMilli()) - endpoint.application.StartupTime
+			endpoint.application.MemInfo = helper.GetMemInfo()
+			endpoint.application.GpuInfo = helper.GetGpuInfo()
 
-				event.AddNewApp(endpoint.application)
-				endpoint.stream.push(event)
-				endpoint.logger.Debug("endpoint----> status", "AppOrigin", endpoint.application.AppOrigin, "Mac", endpoint.application.Mac, "CpuInfo", endpoint.application.CpuInfo, "GpuInfo", endpoint.application.GpuInfo, "MemInfo", endpoint.application.MemInfo)
-			}
-			ticker.Stop()
-		}()
-	}
+			event.AddNewApp(endpoint.application)
+			endpoint.stream.push(event)
+			endpoint.logger.Debug("endpoint----> status", "AppOrigin", endpoint.application.AppOrigin, "Mac", endpoint.application.Mac, "CpuInfo", endpoint.application.CpuInfo, "GpuInfo", endpoint.application.GpuInfo, "MemInfo", endpoint.application.MemInfo)
+		}
+	}()
 
 	go func() {
 		endpoint.httpHandler.AddHandler("/health", func(w http.ResponseWriter, r *http.Request) {
