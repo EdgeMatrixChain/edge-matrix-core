@@ -228,16 +228,10 @@ func (s *RelayClient) keepAliveMinimumRelayConnections() {
 		for _, relayPeerInfo := range relayPeersSnapshot {
 			if relayPeerInfo != nil {
 				if relayPeerInfo.reservation.Expiration.Before(time.Now()) {
-					// dial random unconnected relaynode
-					s.connectToRandomRelayNodes()
-
 					// disconncet expired relaynode
 					s.removeRelayPeerInfo(relayPeerInfo.Info.Info.ID)
 					s.disconnectFromPeer(relayPeerInfo.Info.Info.ID, "reconnect for reservation")
 					s.RemoveFromPeerStore(&relayPeerInfo.Info.Info)
-
-					// update alive status
-					go s.keepAliveToBootnodes()
 				}
 			}
 		}
@@ -245,8 +239,6 @@ func (s *RelayClient) keepAliveMinimumRelayConnections() {
 		if s.numRelayPeers() < MinimumRelayConnections {
 			// dial random unconnected relaynode
 			s.connectToRandomRelayNodes()
-			// update alive status
-			go s.keepAliveToBootnodes()
 		}
 	}
 }
@@ -267,6 +259,9 @@ func (s *RelayClient) connectToRandomRelayNodes() {
 			s.addRelayPeerInfo(relayinfo, network.DirUnknown, resv)
 			// TODO increase relaynodeConnCount
 			s.logger.Info(fmt.Sprintf("reservation: LimitData=%d, LimitDuration=%v, Expiration=%v, Addrs=%v", resv.LimitData, resv.LimitDuration, resv.Expiration, resv.Addrs))
+
+			// update alive status
+			s.keepAliveToBootnodes()
 		}
 	}
 }
@@ -402,32 +397,6 @@ func setupLibp2pKey(secretsManager secrets.SecretsManager) (crypto.PrivKey, erro
 
 // setupAlive Sets up the live service for the node
 func (s *RelayClient) StartAlive(subscription application.Subscription) error {
-	// Set up a fresh routing table
-	//keyID := kb.ConvertPeerID(s.host.ID())
-	//
-	//routingTable, err := kb.NewRoutingTable(
-	//	defaultBucketSize,
-	//	keyID,
-	//	time.Minute,
-	//	s.host.Peerstore(),
-	//	10*time.Second,
-	//	nil,
-	//)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//// Set the PeerAdded event handler
-	//routingTable.PeerAdded = func(p peer.ID) {
-	//	//info := s.host.Peerstore().PeerInfo(p)
-	//	//s.addToDialQueue(&info, common.PriorityRandomDial)
-	//}
-	//
-	//// Set the PeerRemoved event handler
-	//routingTable.PeerRemoved = func(p peer.ID) {
-	//	//s.dialQueue.DeleteTask(p)
-	//}
-
 	// Register the network notify bundle handlers
 	s.host.Network().Notify(s.GetNotifyBundle())
 
@@ -674,7 +643,6 @@ func (s *RelayClient) sayHello(
 
 // startAliveService starts the AliveService loop,
 func (s *RelayClient) startAliveService() {
-	go s.keepAliveToBootnodes()
 	bootnodeAliveTicker := time.NewTicker(bootnodeAliveInterval)
 
 	defer func() {
@@ -686,8 +654,15 @@ func (s *RelayClient) startAliveService() {
 		case <-s.closeCh:
 			return
 		case <-bootnodeAliveTicker.C:
-			go s.keepAliveToBootnodes()
+			s.keepAliveToBootnodes()
 		}
+	}
+}
+
+// Close terminates running processes for SyncAppPeerClient
+func (m *RelayClient) Close() {
+	if m.closeCh != nil {
+		close(m.closeCh)
 	}
 }
 
@@ -702,36 +677,42 @@ func (s *RelayClient) keepAliveToBootnodes() {
 
 	// Try to find a suitable bootnode to use as a reference peer
 	for connectedRlayNode == nil {
-		relayPeers := s.RelayPeers()
-		if relayPeers != nil && len(relayPeers) > 0 {
-			connectedRlayNode = &relayPeers[0].Info
-		} else {
-			time.Sleep(1 * time.Second)
-			continue
-		}
+		select {
+		case <-s.closeCh:
+			return
 
-		// wait for application
-		for s.application == nil {
-			time.Sleep(1 * time.Second)
-		}
+		default:
+			relayPeers := s.RelayPeers()
+			if relayPeers != nil && len(relayPeers) > 0 {
+				connectedRlayNode = &relayPeers[0].Info
+			} else {
+				time.Sleep(1 * time.Second)
+				continue
+			}
 
-		// say hello to connected relay node
-		success, discovery, err := s.sayHello(connectedRlayNode.ID)
-		if err != nil {
-			s.logger.Debug("Unable to execute bootnode peer alive call",
-				"bootnode", connectedRlayNode.ID.String(),
-				"err", err.Error(),
-			)
-			connectedRlayNode = nil
-			time.Sleep(1 * time.Second)
-		}
-		s.logger.Debug("keepAliveToBootnodes result", "success", success, "discovery", discovery)
+			// wait for application
+			for s.application == nil {
+				time.Sleep(1 * time.Second)
+			}
 
-		// add a relay node to s.relaynodes
-		if discovery != "" {
-			err := s.addRelaynodes([]string{discovery})
+			// say hello to connected relay node
+			success, discovery, err := s.sayHello(connectedRlayNode.ID)
 			if err != nil {
-				s.logger.Error("addRelaynodes", "err", err.Error())
+				s.logger.Debug("Unable to execute bootnode peer alive call",
+					"bootnode", connectedRlayNode.ID.String(),
+					"err", err.Error(),
+				)
+				connectedRlayNode = nil
+				time.Sleep(1 * time.Second)
+			}
+			s.logger.Debug("keepAliveToBootnodes result", "success", success, "discovery", discovery)
+
+			// add a relay node to s.relaynodes
+			if discovery != "" {
+				err := s.addRelaynodes([]string{discovery})
+				if err != nil {
+					s.logger.Error("addRelaynodes", "err", err.Error())
+				}
 			}
 		}
 	}
