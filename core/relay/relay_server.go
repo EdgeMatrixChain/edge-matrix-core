@@ -77,6 +77,8 @@ type RelayServer struct {
 	syncAppPeerClient application.SyncAppPeerClient
 
 	proxyAddr *net.TCPAddr
+
+	MaxReservations int
 }
 
 func (s *RelayServer) PublishApplicationStatus(status *appProto.AppStatus) {
@@ -178,7 +180,7 @@ func NewRelayServer(logger hclog.Logger, secretsManager secrets.SecretsManager, 
 		Limit:          nil,
 		ReservationTTL: time.Hour,
 
-		MaxReservations: 1240,
+		MaxReservations: 2048,
 		MaxCircuits:     16,
 		BufferSize:      2048,
 
@@ -197,6 +199,7 @@ func NewRelayServer(logger hclog.Logger, secretsManager secrets.SecretsManager, 
 		protocols:         map[string]Protocol{},
 		syncAppPeerClient: syncAppPeerClient,
 		proxyAddr:         proxyAddr,
+		MaxReservations:   rc.MaxReservations,
 	}
 
 	if RelayDiscovery {

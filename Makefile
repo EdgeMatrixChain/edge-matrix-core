@@ -26,4 +26,5 @@ get:
 protoc:
 	protoc --go_out=./core --go-grpc_out=./core ./core/application/proto/*.proto
 	protoc --go_out=./core --go-grpc_out=./core ./core/network/proto/*.proto
+	protoc --go_out=./core --go-grpc_out=./core ./core/relay/proto/*.proto
 

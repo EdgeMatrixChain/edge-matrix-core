@@ -70,7 +70,7 @@ type RelayClient struct {
 // RelayPeerInfo holds the relay information about the peer
 type RelayPeerInfo struct {
 	Info        *RelayConnInfo
-	reservation *client.Reservation
+	Reservation *client.Reservation
 }
 
 func (s *RelayClient) GetBootnodes() []*peer.AddrInfo {
@@ -151,23 +151,27 @@ func (s *RelayClient) addRelaynodes(relaynodes []string) error {
 	relaynodesMap := s.relaynodes.relaynodesMap
 
 	for _, rawAddr := range relaynodes {
-		bootnode, err := common.StringToAddrInfo(rawAddr)
+		relayNode, err := common.StringToAddrInfo(rawAddr)
 		if err != nil {
 			return fmt.Errorf("failed to parse relaynode %s: %w", rawAddr, err)
 		}
 
-		if bootnode.ID == s.host.ID() {
-			s.logger.Info("Omitting relaynode with same ID as host", "id", bootnode.ID)
+		if relayNode.ID == s.host.ID() {
+			s.logger.Info("Omitting relaynode with same ID as host", "id", relayNode.ID)
 
 			continue
 		}
 
-		if s.hasRelayPeer(bootnode.ID) {
+		if s.hasRelayPeer(relayNode.ID) {
 			continue
 		}
 
-		relaynodesArr = append(relaynodesArr, bootnode)
-		relaynodesMap[bootnode.ID] = bootnode
+		if s.relaynodes.isRelaynode(relayNode.ID) {
+			continue
+		}
+
+		relaynodesArr = append(relaynodesArr, relayNode)
+		relaynodesMap[relayNode.ID] = relayNode
 	}
 
 	s.relaynodes = &relaynodesWrapper{
@@ -189,15 +193,13 @@ func (s *RelayClient) numRelayPeers() int64 {
 
 // RelayPeers returns a copy of the networking server's relay peer connection info set.
 // Only one (initial) connection (inbound OR outbound) per peer is contained [Thread safe]
-func (s *RelayClient) RelayPeers() []*RelayConnInfo {
+func (s *RelayClient) RelayPeers() []*RelayPeerInfo {
 	s.relayPeersLock.Lock()
 	defer s.relayPeersLock.Unlock()
 
-	peers := make([]*RelayConnInfo, 0)
+	peers := make([]*RelayPeerInfo, 0)
 	for _, relayPeer := range s.relayPeers {
-		if relayPeer.Info != nil {
-			peers = append(peers, relayPeer.Info)
-		}
+		peers = append(peers, relayPeer)
 	}
 
 	return peers
@@ -227,7 +229,7 @@ func (s *RelayClient) keepAliveMinimumRelayConnections() {
 		}
 		for _, relayPeerInfo := range relayPeersSnapshot {
 			if relayPeerInfo != nil {
-				if relayPeerInfo.reservation.Expiration.Before(time.Now()) {
+				if relayPeerInfo.Reservation.Expiration.Before(time.Now()) {
 					// disconncet expired relaynode
 					s.removeRelayPeerInfo(relayPeerInfo.Info.Info.ID)
 					s.disconnectFromPeer(relayPeerInfo.Info.Info.ID, "reconnect for reservation")
@@ -319,7 +321,7 @@ func (s *RelayClient) addRelayPeerInfo(relayInfo *peer.AddrInfo, direction netwo
 
 	// Save the connection info to the networking server
 	relayPeerInfo.Info.connDirections[direction] = true
-	relayPeerInfo.reservation = resv
+	relayPeerInfo.Reservation = resv
 	s.relayPeers[relayInfo.ID] = relayPeerInfo
 
 	return false
@@ -684,7 +686,7 @@ func (s *RelayClient) keepAliveToBootnodes() {
 		default:
 			relayPeers := s.RelayPeers()
 			if relayPeers != nil && len(relayPeers) > 0 {
-				connectedRlayNode = &relayPeers[0].Info
+				connectedRlayNode = &relayPeers[0].Info.Info
 			} else {
 				time.Sleep(1 * time.Second)
 				continue
@@ -696,11 +698,11 @@ func (s *RelayClient) keepAliveToBootnodes() {
 			}
 
 			// say hello to connected relay node
-			success, discovery, err := s.sayHello(connectedRlayNode.ID)
-			if err != nil {
+			success, discovery, sayHelloErr := s.sayHello(connectedRlayNode.ID)
+			if sayHelloErr != nil {
 				s.logger.Debug("Unable to execute bootnode peer alive call",
 					"bootnode", connectedRlayNode.ID.String(),
-					"err", err.Error(),
+					"err", sayHelloErr.Error(),
 				)
 				connectedRlayNode = nil
 				time.Sleep(1 * time.Second)
@@ -709,8 +711,7 @@ func (s *RelayClient) keepAliveToBootnodes() {
 
 			// add a relay node to s.relaynodes
 			if discovery != "" {
-				err := s.addRelaynodes([]string{discovery})
-				if err != nil {
+				if err := s.addRelaynodes([]string{discovery}); err != nil {
 					s.logger.Error("addRelaynodes", "err", err.Error())
 				}
 			}
