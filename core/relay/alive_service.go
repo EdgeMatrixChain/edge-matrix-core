@@ -44,42 +44,22 @@ type AliveService struct {
 
 	baseServer networkingServer // The interface towards the base networking server
 	logger     hclog.Logger     // The AliveService logger
-	//routingTable *kb.RoutingTable // Kademlia 'k-bucket' routing table that contains connected nodes info
 
 	syncAppPeerClient application.SyncAppPeerClient
-	//closeCh           chan struct{} // Channel used for stopping the AliveService
 }
 
 // NewAliveService creates a new instance of the alive service
 func NewAliveService(
 	server networkingServer,
-	//routingTable *kb.RoutingTable,
 	logger hclog.Logger,
 	syncAppPeerClient application.SyncAppPeerClient,
 ) *AliveService {
 	return &AliveService{
-		logger:     logger.Named("AliveService"),
-		baseServer: server,
-		//routingTable:      routingTable,
+		logger:            logger.Named("AliveService"),
+		baseServer:        server,
 		syncAppPeerClient: syncAppPeerClient,
-		//closeCh:           make(chan struct{}),
 	}
 }
-
-// Close stops the discovery service
-//func (d *AliveService) Close() {
-//	close(d.closeCh)
-//}
-
-// RoutingTableSize returns the size of the routing table
-//func (d *AliveService) RoutingTableSize() int {
-//	return d.routingTable.Size()
-//}
-
-// RoutingTablePeers fetches the peers from the routing table
-//func (d *AliveService) RoutingTablePeers() []peer.ID {
-//	return d.routingTable.ListPeers()
-//}
 
 func (d *AliveService) Hello(ctx context.Context, status *proto.AliveStatus) (*proto.AliveStatusResp, error) {
 	// Extract the requesting peer ID from the gRPC context
