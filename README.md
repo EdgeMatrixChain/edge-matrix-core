@@ -2,8 +2,6 @@
 
 Edge-Matrix-Core was born from and built to improve the maintainability and modularity of the existing version of [Edge-Matrix-Computing](https://github.com/shawnstartup/edge-matrix-computing)
 
-Refer to the [Edge-Matrix-Computing](https://github.com/shawnstartup/edge-matrix-computing) project for usage
-
 You can create a P2P network as shown below and connect the webapp to the edge of the network:
 ```
  +----------------+                 +----------------+                 +-----------------+              +-----------------+
@@ -37,4 +35,5 @@ You can create a P2P network as shown below and connect the webapp to the edge o
         |                                   |  
        ...                                 ...
 ```
+Refer to the [Edge-Matrix-Computing](https://github.com/shawnstartup/edge-matrix-computing) project for usage
 
