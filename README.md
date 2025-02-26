@@ -37,3 +37,5 @@ You can create a P2P network as shown below and connect the webapp to the edge o
 ```
 Refer to the [Edge-Matrix-Computing](https://github.com/shawnstartup/edge-matrix-computing) project for usage
 
+## License
+MIT License
