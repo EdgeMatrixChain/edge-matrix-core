@@ -2,12 +2,12 @@ package local
 
 import (
 	"encoding/hex"
-	"github.com/emc-protocol/edge-matrix-core/core/crypto"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/crypto"
 	"os"
 	"testing"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/common"
-	"github.com/emc-protocol/edge-matrix-core/core/secrets"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/common"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/secrets"
 	"github.com/hashicorp/go-hclog"
 	libp2pCrypto "github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/stretchr/testify/assert"

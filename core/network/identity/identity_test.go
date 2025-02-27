@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/emc-protocol/edge-matrix-core/core/network/proto"
-	networkTesting "github.com/emc-protocol/edge-matrix-core/core/network/testing"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/proto"
+	networkTesting "github.com/EdgeMatrixChain/edge-matrix-core/core/network/testing"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"

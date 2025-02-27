@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/hex"
-	"github.com/emc-protocol/edge-matrix-core/core/types"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/hex"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/types"
 )
 
 var (

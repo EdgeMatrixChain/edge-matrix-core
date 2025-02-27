@@ -2,8 +2,8 @@ package application
 
 import (
 	"context"
-	"github.com/emc-protocol/edge-matrix-core/core/network"
-	"github.com/emc-protocol/edge-matrix-core/core/network/event"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/event"
 	"github.com/libp2p/go-libp2p/core/peer"
 	rawGrpc "google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"

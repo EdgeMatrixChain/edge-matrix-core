@@ -1,7 +1,7 @@
 package proof
 
 import (
-	"github.com/emc-protocol/edge-matrix-core/core/crypto"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/crypto"
 	"math/big"
 	"testing"
 

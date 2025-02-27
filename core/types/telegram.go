@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"sync/atomic"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/keccak"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/keccak"
 )
 
 type TeleType byte

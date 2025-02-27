@@ -3,7 +3,7 @@ package network
 import (
 	"net"
 
-	"github.com/emc-protocol/edge-matrix-core/core/secrets"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/secrets"
 	"github.com/multiformats/go-multiaddr"
 )
 

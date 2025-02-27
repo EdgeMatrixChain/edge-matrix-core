@@ -1,7 +1,7 @@
 package application
 
 import (
-	appProto "github.com/emc-protocol/edge-matrix-core/core/application/proto"
+	appProto "github.com/EdgeMatrixChain/edge-matrix-core/core/application/proto"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"

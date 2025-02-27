@@ -2,7 +2,7 @@ package web3
 
 import (
 	"encoding/json"
-	"github.com/emc-protocol/edge-matrix-core/core/application"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/application"
 )
 
 // NodeQuery is a query to filter node

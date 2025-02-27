@@ -3,9 +3,9 @@ package proof
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/crypto"
-	"github.com/emc-protocol/edge-matrix-core/core/helper/keccak"
-	"github.com/emc-protocol/edge-matrix-core/core/types"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/crypto"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/keccak"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/types"
 	"github.com/umbracle/fastrlp"
 	"math/big"
 )

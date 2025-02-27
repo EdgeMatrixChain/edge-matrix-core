@@ -3,13 +3,13 @@ package local
 import (
 	"errors"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/crypto"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/crypto"
 	"os"
 	"path/filepath"
 	"sync"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/common"
-	"github.com/emc-protocol/edge-matrix-core/core/secrets"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/common"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/secrets"
 	"github.com/hashicorp/go-hclog"
 )
 

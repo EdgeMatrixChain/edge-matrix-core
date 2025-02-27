@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/application"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/application"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/hashicorp/go-hclog"

@@ -1,4 +1,4 @@
-module github.com/emc-protocol/edge-matrix-core
+module github.com/EdgeMatrixChain/edge-matrix-core
 
 go 1.23
 

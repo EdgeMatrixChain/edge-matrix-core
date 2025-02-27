@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/emc-protocol/edge-matrix-core/core/network/common"
-	"github.com/emc-protocol/edge-matrix-core/core/network/event"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/common"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/event"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p/core/network"
 
-	"github.com/emc-protocol/edge-matrix-core/core/network/grpc"
-	"github.com/emc-protocol/edge-matrix-core/core/network/proto"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/grpc"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/proto"
 	kb "github.com/libp2p/go-libp2p-kbucket"
 	"github.com/libp2p/go-libp2p/core/peer"
 )

@@ -3,7 +3,7 @@ package web3
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/jsonrpc"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/jsonrpc"
 )
 
 // Request is a jsonrpc request

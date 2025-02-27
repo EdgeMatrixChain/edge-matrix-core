@@ -5,8 +5,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/crypto"
-	"github.com/emc-protocol/edge-matrix-core/core/types"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/crypto"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/types"
 	"time"
 )
 import (

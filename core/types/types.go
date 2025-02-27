@@ -7,8 +7,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/hex"
-	"github.com/emc-protocol/edge-matrix-core/core/helper/keccak"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/hex"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/keccak"
 )
 
 var ZeroAddress = Address{}

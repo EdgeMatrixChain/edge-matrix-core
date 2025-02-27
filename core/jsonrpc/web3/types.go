@@ -2,12 +2,12 @@ package web3
 
 import (
 	"encoding/json"
-	"github.com/emc-protocol/edge-matrix-core/core/types"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/types"
 	"math/big"
 	"strconv"
 	"strings"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/hex"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/hex"
 )
 
 // For union type of transaction and types.Hash

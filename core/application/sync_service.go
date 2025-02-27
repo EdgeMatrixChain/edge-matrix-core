@@ -3,9 +3,9 @@ package application
 import (
 	"context"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/application/proto"
-	"github.com/emc-protocol/edge-matrix-core/core/network"
-	"github.com/emc-protocol/edge-matrix-core/core/network/grpc"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/application/proto"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/grpc"
 	"github.com/hashicorp/go-hclog"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"google.golang.org/protobuf/types/known/emptypb"

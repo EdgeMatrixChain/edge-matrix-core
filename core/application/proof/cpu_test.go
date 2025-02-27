@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/helper/hex"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/hex"
 	"os/exec"
 	"regexp"
 	"testing"

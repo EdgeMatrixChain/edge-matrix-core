@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/common"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/common"
 )
 
 // Dial dials an IPC path

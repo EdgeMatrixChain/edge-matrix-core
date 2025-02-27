@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/common"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/common"
 )
 
 // SecretsManagerConfig is the configuration that gets

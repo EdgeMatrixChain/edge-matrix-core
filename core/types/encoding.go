@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/hex"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/hex"
 )
 
 func ParseUint64orHex(val *string) (uint64, error) {

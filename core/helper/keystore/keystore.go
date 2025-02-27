@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/emc-protocol/edge-matrix-core/core/helper/common"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/common"
 )
 
 type createFn func() ([]byte, error)

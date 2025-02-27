@@ -3,8 +3,8 @@ package crypto
 import (
 	"bytes"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/helper/hex"
-	"github.com/emc-protocol/edge-matrix-core/core/types"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/hex"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/types"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"os"

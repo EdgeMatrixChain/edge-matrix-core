@@ -3,7 +3,7 @@ package gcpssm
 import (
 	"context"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/secrets"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/secrets"
 	"os"
 
 	sm "cloud.google.com/go/secretmanager/apiv1"

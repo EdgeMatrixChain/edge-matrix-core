@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/network/event"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/event"
 	"github.com/hashicorp/go-hclog"
 	"sync"
 
-	"github.com/emc-protocol/edge-matrix-core/core/network/proto"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/proto"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 )

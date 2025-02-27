@@ -4,7 +4,7 @@ import (
 	"container/heap"
 	"sync"
 
-	"github.com/emc-protocol/edge-matrix-core/core/network/common"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/common"
 
 	"github.com/libp2p/go-libp2p/core/peer"
 )

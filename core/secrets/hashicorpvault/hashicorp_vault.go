@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/emc-protocol/edge-matrix-core/core/secrets"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/secrets"
 	"github.com/hashicorp/go-hclog"
 	vault "github.com/hashicorp/vault/api"
 )

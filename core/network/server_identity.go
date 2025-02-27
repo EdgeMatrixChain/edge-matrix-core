@@ -3,11 +3,11 @@ package network
 import (
 	"math/big"
 
+	peerEvent "github.com/EdgeMatrixChain/edge-matrix-core/core/network/event"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/grpc"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/identity"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/network/proto"
 	"github.com/armon/go-metrics"
-	peerEvent "github.com/emc-protocol/edge-matrix-core/core/network/event"
-	"github.com/emc-protocol/edge-matrix-core/core/network/grpc"
-	"github.com/emc-protocol/edge-matrix-core/core/network/identity"
-	"github.com/emc-protocol/edge-matrix-core/core/network/proto"
 	kbucket "github.com/libp2p/go-libp2p-kbucket"
 	"github.com/libp2p/go-libp2p-kbucket/keyspace"
 	"github.com/libp2p/go-libp2p/core/network"

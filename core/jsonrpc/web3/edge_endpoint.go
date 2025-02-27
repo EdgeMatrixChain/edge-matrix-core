@@ -2,7 +2,7 @@ package web3
 
 import (
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/types"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/types"
 	"github.com/hashicorp/go-hclog"
 )
 

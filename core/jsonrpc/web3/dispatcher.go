@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/jsonrpc"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/jsonrpc"
 	"github.com/libp2p/go-libp2p/core/host"
 	"math"
 	"reflect"

@@ -14,11 +14,11 @@ import (
 	"hash"
 	"math/big"
 
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/hex"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/helper/keystore"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/secrets"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/types"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/emc-protocol/edge-matrix-core/core/helper/hex"
-	"github.com/emc-protocol/edge-matrix-core/core/helper/keystore"
-	"github.com/emc-protocol/edge-matrix-core/core/secrets"
-	"github.com/emc-protocol/edge-matrix-core/core/types"
 	"github.com/umbracle/fastrlp"
 	"golang.org/x/crypto/sha3"
 )

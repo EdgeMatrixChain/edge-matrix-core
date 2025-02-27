@@ -2,7 +2,7 @@ package proof
 
 import (
 	"fmt"
-	"github.com/emc-protocol/edge-matrix-core/core/types"
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/types"
 	"github.com/umbracle/fastrlp"
 	"math/big"
 )

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/EdgeMatrixChain/edge-matrix-core/core/secrets"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/emc-protocol/edge-matrix-core/core/secrets"
 	"github.com/hashicorp/go-hclog"
 )
 
