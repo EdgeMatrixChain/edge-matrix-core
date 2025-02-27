@@ -7,10 +7,10 @@ import (
 
 // NodeQuery is a query to filter node
 type NodeQuery struct {
-	name    string
-	tag     string
-	id      string
-	version string
+	Name    string `json:"name"`
+	Tag     string `json:"tag"`
+	Id      string `json:"id"`
+	Version string `json:"version"`
 }
 
 func DecodeNodeQueryFromInterface(i interface{}) (*NodeQuery, error) {
@@ -29,9 +29,9 @@ func DecodeNodeQueryFromInterface(i interface{}) (*NodeQuery, error) {
 }
 
 func (q *NodeQuery) Match(rm *application.Application) bool {
-	if q.tag != "" {
+	if q.Tag != "" {
 		match := false
-		if q.tag == rm.Tag {
+		if q.Tag == rm.Tag {
 			match = true
 		}
 		if !match {
@@ -39,9 +39,9 @@ func (q *NodeQuery) Match(rm *application.Application) bool {
 		}
 	}
 	// check name
-	if q.name != "" {
+	if q.Name != "" {
 		match := false
-		if rm.Name == q.name {
+		if rm.Name == q.Name {
 			match = true
 		}
 
@@ -50,9 +50,9 @@ func (q *NodeQuery) Match(rm *application.Application) bool {
 		}
 	}
 
-	if q.id != "" {
+	if q.Id != "" {
 		match := false
-		if rm.PeerID.String() == q.id {
+		if rm.PeerID.String() == q.Id {
 			match = true
 		}
 
@@ -61,9 +61,9 @@ func (q *NodeQuery) Match(rm *application.Application) bool {
 		}
 	}
 
-	if q.version != "" {
+	if q.Version != "" {
 		match := false
-		if rm.Version == q.version {
+		if rm.Version == q.Version {
 			match = true
 		}
 
